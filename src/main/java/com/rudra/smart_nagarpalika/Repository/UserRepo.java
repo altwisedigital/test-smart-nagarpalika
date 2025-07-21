@@ -1,0 +1,27 @@
+package com.rudra.smart_nagarpalika.Repository;
+
+import com.rudra.smart_nagarpalika.Model.UserModel;
+import com.rudra.smart_nagarpalika.Model.UserRole;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface UserRepo extends JpaRepository<UserModel, Long> {
+
+    Optional<UserModel> findByUsername(String username);
+
+    // Find users by role
+    List<UserModel> findByRole(UserRole role);
+
+    // Check if username exists
+    boolean existsByUsername(String username);
+
+    // Find by phone number
+    Optional<UserModel> findByPhoneNumber(String phoneNumber);
+
+    // Custom query to find active users (if you add status field later)
+    @Query("SELECT u FROM UserModel u WHERE u.role = ?1")
+    List<UserModel> findUsersByRole(UserRole role);
+}
