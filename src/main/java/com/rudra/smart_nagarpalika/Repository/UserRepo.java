@@ -18,10 +18,12 @@ public interface UserRepo extends JpaRepository<UserModel, Long> {
     // Check if username exists
     boolean existsByUsername(String username);
 
-    // Find by phone number
+    // Find by phone numbera
     Optional<UserModel> findByPhoneNumber(String phoneNumber);
 
     // Custom query to find active users (if you add status field later)
     @Query("SELECT u FROM UserModel u WHERE u.role = ?1")
     List<UserModel> findUsersByRole(UserRole role);
+
+    Optional<UserModel> findByUsernameAndPassword(String username, String password);
 }

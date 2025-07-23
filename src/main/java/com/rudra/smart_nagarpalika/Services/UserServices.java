@@ -53,4 +53,10 @@ public class UserServices {
     public Optional<UserModel> getUserByUsername(String username) {
         return userRepo.findByUsername(username);
     }
+
+
+    public boolean validateCredentials(String username, String password) {
+        Optional<UserModel> userOpt = userRepo.findByUsernameAndPassword(username, password);
+        return userOpt.isPresent() && userOpt.get().getRole() == UserRole.ADMIN;
+    }
 }
