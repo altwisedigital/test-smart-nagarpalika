@@ -7,6 +7,7 @@ import com.rudra.smart_nagarpalika.Model.UserModel;
 import com.rudra.smart_nagarpalika.Model.UserRole;
 import com.rudra.smart_nagarpalika.Services.UserServices;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,51 +15,63 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
+
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 @RestController
+@Slf4j
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserServices userService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> adminLogin(@RequestBody LoginRequestDTO loginRequestDTO) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
+            // Authenticate using username and password
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            loginRequestDTO.getUsername(),
-                            loginRequestDTO.getPassword()
+                            request.username(),
+                            request.password()
                     )
             );
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            boolean roleAdmin = authentication.getAuthorities().stream()
-                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
-
-            if (!roleAdmin) {
-                return ResponseEntity.status(403).body(new ErrorResponse("Access Denied: Not an admin"));
+            // Get user by username
+            Optional<UserModel> user = userService.getUserByUsername(request.username());
+            if (user.isEmpty()) {
+                return ResponseEntity.status(404).body(new ApiResponse("User not found", false));
             }
 
-            return ResponseEntity.ok().body(new LoginResponse("Successfully logged in", authentication.getName()));
+            // Extract role (e.g., ROLE_ADMIN, ROLE_EMPLOYEE, ROLE_CITIZEN)
+            String role = authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .findFirst()
+                    .orElse("ROLE_UNKNOWN");
+
+            log.info("User {} logged in with role {}", user.get().getUsername(), role);
+
+            return ResponseEntity.ok(new LoginResponse(user.get().getUsername(), role));
 
         } catch (BadCredentialsException e) {
-            return ResponseEntity.status(401).body(new ErrorResponse("Invalid username or password"));
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(401).body(new ErrorResponse("Authentication failed: " + e.getMessage()));
+            return ResponseEntity.status(401).body(new ApiResponse("Invalid credentials", false));
+        } catch (Exception e) {
+            log.error("Login failed", e);
+            return ResponseEntity.internalServerError().body(new ApiResponse("Login failed", false));
         }
     }
 
-    // Response DTOs
-    public record LoginResponse(String message, String username) {}
-    public record ErrorResponse(String error) {}
+
+    public record LoginRequest(String username, String password) {}
+    public record LoginResponse(String username, String role) {}
+    public record ApiResponse(String message, boolean success) {}
 
 
     @PostMapping("/create_user")

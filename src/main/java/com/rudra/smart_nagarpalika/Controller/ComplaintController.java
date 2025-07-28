@@ -1,6 +1,7 @@
 package com.rudra.smart_nagarpalika.Controller;
 
 import com.rudra.smart_nagarpalika.DTO.ComplaintRequestDTO;
+import com.rudra.smart_nagarpalika.DTO.ComplaintResponseDTO;
 import com.rudra.smart_nagarpalika.Model.UserModel;
 import com.rudra.smart_nagarpalika.Repository.UserRepo;
 import com.rudra.smart_nagarpalika.Services.ComplaintService;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,7 +29,9 @@ public class ComplaintController {
     private final UserRepo userRepo;
     private final ImageService imageService;
 
+
     @PostMapping(value = "/register-with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> registerComplaintWithImages(
             @RequestParam String username,
             @RequestParam String description,
@@ -65,8 +69,16 @@ public class ComplaintController {
     }
 
 
-    @GetMapping("/allImages/{Userid}")
-    public List<String> getImages(@PathVariable Long Userid){
-        return complaintService.getImageUrlsByUserId(Userid);
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'USER')")
+    public ResponseEntity<List<ComplaintResponseDTO>> getAllComplaints() {
+        return ResponseEntity.ok(complaintService.getAllComplaints());
     }
+
+
+//
+//    @GetMapping("/allImages/{Userid}")
+//    public List<String> getImages(@PathVariable Long Userid){
+//        return complaintService.getImageUrlsByUserId(Userid);
+//    }
 }

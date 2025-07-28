@@ -10,6 +10,7 @@ public interface ComplaintRepo extends JpaRepository<ComplaintModel, Long> {
 
     List<ComplaintModel> findByUserId(Long userId);
 
+    List<ComplaintModel> findByUsername(String username);
 
 
 }

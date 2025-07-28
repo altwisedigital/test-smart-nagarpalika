@@ -15,7 +15,7 @@ public interface UserRepo extends JpaRepository<UserModel, Long> {
     // Find users by role
     List<UserModel> findByRole(UserRole role);
 
-    // Check if username exists
+    // Check if the username exists
     boolean existsByUsername(String username);
 
     // Find by phone numbera

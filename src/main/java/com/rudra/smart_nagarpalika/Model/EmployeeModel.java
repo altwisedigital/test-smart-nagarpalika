@@ -3,6 +3,7 @@ package com.rudra.smart_nagarpalika.Model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -25,6 +26,8 @@ public class EmployeeModel {
 
     private String mobile;
 
-    @ElementCollection
-    private List<Integer> assignedComplaints; //  we have to link this later to Complaint entities
+
+    @OneToMany(mappedBy = "assignedEmployee")
+    private List<ComplaintModel> assignedComplaints = new ArrayList<>();
+    //  we have to link this later to Complaint entities
 }

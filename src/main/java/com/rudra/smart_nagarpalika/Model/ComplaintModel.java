@@ -23,8 +23,9 @@ public class ComplaintModel {
     private String location;
 
 //    @ElementCollection
-@Column(columnDefinition = "TEXT")
-    private List<String> imageUrls = new ArrayList<>();
+@OneToMany(mappedBy = "complaint", cascade = CascadeType.ALL, orphanRemoval = true)
+private List<ImageModel> images = new ArrayList<>();
+
 
     private LocalDateTime createdAt;
     private String submittedBy;
@@ -39,4 +40,10 @@ public class ComplaintModel {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private UserModel user;
+
+
+    @ManyToOne
+    @JoinColumn(name = "employee_id")
+    private EmployeeModel assignedEmployee;
+
 }

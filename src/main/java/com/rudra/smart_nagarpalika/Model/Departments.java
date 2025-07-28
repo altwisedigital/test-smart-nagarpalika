@@ -4,6 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum Departments {
+    ALL_DEPARTMENTS("All Departments"),
     DRAINAGE_MAINTENANCE("Drainage Maintenance"),
     ROAD_MAINTENANCE("Road Maintenance"),
     WATER_MAINTENANCE("Water Maintenance"),

@@ -38,5 +38,28 @@ public class EmployeeService {
         return employeeRepo.findAll();
     }
 
+    public EmployeeModel updateEmployee(EmployeeDTO employeeDTO) {
+        // Fetch existing employee by mobile
+        EmployeeModel existingEmployee = employeeRepo.findByMobile(employeeDTO.getMobile())
+                .orElseThrow(() -> new IllegalArgumentException("Employee not found with mobile: " + employeeDTO.getMobile()));
+
+        // Update fields on the existing object
+        existingEmployee.setFirstname(employeeDTO.getFirstname());
+        existingEmployee.setLastname(employeeDTO.getLastname());
+        existingEmployee.setDepartment(employeeDTO.getDepartment());
+        existingEmployee.setRole(UserRole.EMPLOYEE); // optional if always fixed
+
+        // Save and return updated employee
+        return employeeRepo.save(existingEmployee);
+    }
+
+    public void deleteEmployeeByMobile(String mobile) {
+        boolean exists = employeeRepo.existsByMobile(mobile);
+        if (exists) {
+            employeeRepo.deleteByMobile(mobile);
+        } else {
+            throw new IllegalArgumentException("No employee exists with mobile: " + mobile);
+        }
+    }
 
 }
