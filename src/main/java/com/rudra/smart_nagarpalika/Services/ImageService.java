@@ -32,6 +32,6 @@ public class ImageService {
 
         log.info("Image saved at: {}", path.toString());
 
-        return "/uploads/" + filename; // Return relative path
+        return "http://192.168.1.34:8080/uploads/" + filename; // Return a relative path
     }
 }
