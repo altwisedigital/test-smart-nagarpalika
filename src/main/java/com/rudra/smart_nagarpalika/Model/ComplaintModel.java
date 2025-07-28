@@ -17,7 +17,7 @@ public class ComplaintModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-//    private String username;
+
     private String description;
     private String category;
     private String location;

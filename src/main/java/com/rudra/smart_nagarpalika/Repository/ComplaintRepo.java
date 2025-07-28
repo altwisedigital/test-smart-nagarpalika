@@ -9,7 +9,8 @@ import java.util.Optional;
 public interface ComplaintRepo extends JpaRepository<ComplaintModel, Long> {
 
     List<ComplaintModel> findByUserId(Long userId);
-    List<ComplaintModel> findBySubmittedBy(String submittedBy);
+
+    List<ComplaintModel> findByUsername(String username);
 
 
 }
