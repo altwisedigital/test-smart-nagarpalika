@@ -147,7 +147,7 @@ public class ComplaintService {
 
 
      public  List<ComplaintResponseDTO> getComplaintsByUsername(String  username){
-         List<ComplaintModel> byUsername = complaintRepo.findByUsername(username);
+         List<ComplaintModel> byUsername = complaintRepo.findBySubmittedBy(username);
 
          return byUsername.stream()
                  .map( complaint  -> new ComplaintResponseDTO(complaint) )
