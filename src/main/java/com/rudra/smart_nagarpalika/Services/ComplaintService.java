@@ -53,7 +53,7 @@ public class ComplaintService {
         // 3. Create complaint
         ComplaintModel complaint = new ComplaintModel();
         complaint.setDescription(dto.getDescription());
-        complaint.setCategory(dto.getCategory());
+        complaint.setDepartment(dto.getDepartment());
         complaint.setLocation(dto.getLocation());
         complaint.setLatitude(dto.getLatitude());
         complaint.setLongitude(dto.getLongitude());
@@ -74,7 +74,7 @@ public class ComplaintService {
         complaint.setUser(user);
 
         // 4. Auto-assign employee based on category
-        Departments dept = mapCategoryToDepartment(dto.getCategory());
+        Departments dept = mapCategoryToDepartment(dto.getDepartment().getName());
         List<EmployeeModel> employees = employeeRepo.findByDepartment(dept);
         if (!employees.isEmpty()) {
             complaint.setAssignedEmployee(employees.get(0)); // First available employee
@@ -126,16 +126,14 @@ public class ComplaintService {
         return complaints.stream().map(complaint -> new ComplaintResponseDTO(
                 complaint.getId(),
                 complaint.getDescription(),
-                complaint.getCategory(),
+                complaint.getDepartment() != null ? complaint.getDepartment().getName() : null,
+                complaint.getWard() != null ? complaint.getWard().getId() : null,
                 complaint.getLocation(),
-
                 complaint.getImages() != null
                         ? complaint.getImages().stream()
-                        .map(img -> "http://localhost:8080" + img.getImageUrl())
-
-                .toList()
+                            .map(ImageModel::getImageUrl)
+                            .toList()
                         : List.of(),
-
                 complaint.getSubmittedBy(),
                 complaint.getStatus().name(),
                 complaint.getAssignedEmployee() != null
@@ -146,7 +144,7 @@ public class ComplaintService {
     }
 
 
-     public  List<ComplaintResponseDTO> getComplaintsByUsername(String  username){
+        public  List<ComplaintResponseDTO> getComplaintsByUsername(String  username){
          List<ComplaintModel> byUsername = complaintRepo.findBySubmittedBy(username);
 
          return byUsername.stream()

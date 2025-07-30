@@ -1,13 +1,11 @@
 package com.rudra.smart_nagarpalika.Controller;
 
 import com.rudra.smart_nagarpalika.DTO.ComplaintResponseDTO;
+import com.rudra.smart_nagarpalika.DTO.DepartmentDTO;
 import com.rudra.smart_nagarpalika.DTO.EmployeeDTO;
-import com.rudra.smart_nagarpalika.Model.ComplaintModel;
-import com.rudra.smart_nagarpalika.Model.Departments;
-import com.rudra.smart_nagarpalika.Model.EmployeeModel;
-import com.rudra.smart_nagarpalika.Services.ComplaintService;
-import com.rudra.smart_nagarpalika.Services.EmployeeService;
-import com.rudra.smart_nagarpalika.Services.UserServices;
+import com.rudra.smart_nagarpalika.DTO.WardsDTO;
+import com.rudra.smart_nagarpalika.Model.*;
+import com.rudra.smart_nagarpalika.Services.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,7 +25,8 @@ public class AdminController {
     private final EmployeeService employeeService;
     private final UserServices userServices;
     private final ComplaintService complaintService;
-
+    private final DeparmentService deparmentService;
+    private final WardsService wardsService;
 
     // to create employees
     @PostMapping("/create")
@@ -83,21 +82,21 @@ public class AdminController {
 
     // to get all the departments
 
-    @GetMapping("/departments")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getAllDepartments() {
-        try {
-            var departments = Arrays.stream(Departments.values())
-                    .map(dep -> new DepartmentResponse(dep.name(), dep.getDisplayName()))
-                    .toList();
-
-            return ResponseEntity.ok(departments);
-        } catch (Exception e) {
-            log.error("Failed to fetch departments", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse("Failed to fetch departments", false));
-        }
-    }
+//    @GetMapping("/departments")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<?> getAllDepartments() {
+//        try {
+//            var departments = Arrays.stream(Departments.values())
+//                    .map(dep -> new DepartmentResponse(dep.name(), dep.getDisplayName()))
+//                    .toList();
+//
+//            return ResponseEntity.ok(departments);
+//        } catch (Exception e) {
+//            log.error("Failed to fetch departments", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(new ApiResponse("Failed to fetch departments", false));
+//        }
+//    }
 
     public record DepartmentResponse(String code, String displayName) {}
 
@@ -127,6 +126,62 @@ public class AdminController {
         }
     }
 
+  //create department
+   @PostMapping("/create_department")
+   @PreAuthorize("hasRole('ADMIN')")
+   public ResponseEntity<?> CreateDepartments(@RequestBody  DepartmentDTO department){
+        try {
+          deparmentService.createDepartment(department);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Department created successfully");
+        } catch (Exception e) {
+            return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cant create new Department"+e);
+        }
 
+   }
+
+   // get all Department
+    @GetMapping("/get_departments_admin")
+    @PreAuthorize("hasRole('ADMIN')")
+
+    public ResponseEntity<?> getAllDepartmentsForAdmin(){
+        try {
+            List<DepartmentModel> departments = deparmentService.GetAllDepartment();
+
+            return ResponseEntity.ok(departments);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Couldn't fetch the departments now"+e);
+        }
+    }
+
+
+    // create department
+
+    @PostMapping("/create_wards")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> CreateWards(@RequestBody WardsDTO dto){
+          try {
+              wardsService.createWards(dto);
+              return ResponseEntity.ok("Wards have been created");
+          } catch (Exception e) {
+              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("couldn't create the wards ERROR:"+e);
+          }
+    }
+
+    //get all wards
+
+     @GetMapping("/get_wards")
+     @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
+
+     public ResponseEntity<?> GetAllWards(){
+        try {
+            List<WardsModel> allWards = wardsService.GetAllWards();
+            return ResponseEntity.ok(
+                    "wards:"+allWards
+            );
+
+        } catch (Exception e) {
+            return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body("couldn't fetch the wards ERROR : "+e);
+        }
+     }
 
 }

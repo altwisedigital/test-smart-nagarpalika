@@ -3,8 +3,10 @@ package com.rudra.smart_nagarpalika.Controller;
 import com.rudra.smart_nagarpalika.DTO.ComplaintResponseDTO;
 import com.rudra.smart_nagarpalika.DTO.UserRegistrationDTO;
 import com.rudra.smart_nagarpalika.Model.ComplaintModel;
+import com.rudra.smart_nagarpalika.Model.DepartmentModel;
 import com.rudra.smart_nagarpalika.Model.UserModel;
 import com.rudra.smart_nagarpalika.Model.UserRole;
+import com.rudra.smart_nagarpalika.Services.DeparmentService;
 import com.rudra.smart_nagarpalika.Services.UserServices;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserServices userService;
+    private final DeparmentService deparmentService;
 
     @GetMapping("/complaints/by-username")
     @PreAuthorize("hasRole('USER')")
@@ -42,4 +45,20 @@ public class UserController {
 
         return ResponseEntity.ok(complaintDTOs);
     }
+
+
+    //get departments
+    @GetMapping("/get_departments_user")
+    @PreAuthorize( "hasRole('USER')")
+
+    public ResponseEntity<?> getAllDepartmentsForAdmin(){
+        try {
+            List<DepartmentModel> departments = deparmentService.GetAllDepartment();
+
+            return ResponseEntity.ok(departments);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Couldn't fetch the departments now"+e);
+        }
+    }
+
 }

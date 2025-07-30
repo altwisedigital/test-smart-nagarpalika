@@ -2,6 +2,7 @@ package com.rudra.smart_nagarpalika.Controller;
 
 import com.rudra.smart_nagarpalika.DTO.ComplaintRequestDTO;
 import com.rudra.smart_nagarpalika.DTO.ComplaintResponseDTO;
+import com.rudra.smart_nagarpalika.Model.DepartmentModel;
 import com.rudra.smart_nagarpalika.Model.UserModel;
 import com.rudra.smart_nagarpalika.Repository.UserRepo;
 import com.rudra.smart_nagarpalika.Services.ComplaintService;
@@ -35,7 +36,7 @@ public class ComplaintController {
     public ResponseEntity<?> registerComplaintWithImages(
             @RequestParam String username,
             @RequestParam String description,
-            @RequestParam String category,
+            @RequestParam DepartmentModel department,
             @RequestParam String latitude,
             @RequestParam String longitude,
             @RequestParam String location,
@@ -53,7 +54,7 @@ public class ComplaintController {
             ComplaintRequestDTO dto = new ComplaintRequestDTO();
 //            dto.setUsername(username.trim());
             dto.setDescription(description.trim());
-            dto.setCategory(category.trim());
+            dto.setDepartment(department);
             dto.setLocation(location.trim());
             dto.setLatitude(lat);
             dto.setLongitude(lng);
