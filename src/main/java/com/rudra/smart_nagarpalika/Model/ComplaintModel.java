@@ -19,8 +19,9 @@ public class ComplaintModel {
     private Long id;
 
     private String description;
+
     @ManyToOne
-    @JoinColumn(name = "department_name")
+    @JoinColumn(name = "department_id")
     private DepartmentModel department;
 
     private String location;
@@ -50,7 +51,7 @@ private List<ImageModel> images = new ArrayList<>();
     private EmployeeModel assignedEmployee;
 
     @ManyToOne
-    @JoinColumn(name = "ward_id")
+    @JoinColumn(name = "ward_name")
     private WardsModel ward;
 
 }

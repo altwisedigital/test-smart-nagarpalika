@@ -4,7 +4,9 @@ import com.rudra.smart_nagarpalika.DTO.ComplaintRequestDTO;
 import com.rudra.smart_nagarpalika.DTO.ComplaintResponseDTO;
 import com.rudra.smart_nagarpalika.Model.*;
 import com.rudra.smart_nagarpalika.Repository.ComplaintRepo;
+import com.rudra.smart_nagarpalika.Repository.DepartmentRepo;
 import com.rudra.smart_nagarpalika.Repository.EmployeeRepo;
+import com.rudra.smart_nagarpalika.Repository.WardsRepo;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
@@ -15,9 +17,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +28,8 @@ import java.util.stream.Collectors;
 public class ComplaintService {
 
     private final ComplaintRepo complaintRepo;
-
+    private  final DepartmentRepo departmentRepo;
+    private final WardsRepo wardsRepo;
     private final EmployeeRepo employeeRepo;
     private final ImageService imageService;
 
@@ -55,6 +59,7 @@ public class ComplaintService {
         complaint.setDescription(dto.getDescription());
         complaint.setDepartment(dto.getDepartment());
         complaint.setLocation(dto.getLocation());
+        complaint.setWard(dto.getWards());
         complaint.setLatitude(dto.getLatitude());
         complaint.setLongitude(dto.getLongitude());
 
@@ -73,12 +78,32 @@ public class ComplaintService {
         complaint.setSubmittedBy(user.getUsername());
         complaint.setUser(user);
 
-        // 4. Auto-assign employee based on category
-        Departments dept = mapCategoryToDepartment(dto.getDepartment().getName());
-        List<EmployeeModel> employees = employeeRepo.findByDepartment(dept);
-        if (!employees.isEmpty()) {
-            complaint.setAssignedEmployee(employees.get(0)); // First available employee
+        /// 4. Auto-assign employee based on category as well as we assign
+        /// the complaint to all the employees from the same wards
+          // Steps 1: get department and ward from the complaint
+
+        String departmentName = dto.getDepartment().getName();
+        String wardsName = dto.getWards().getName();
+
+        DepartmentModel dept = departmentRepo.findByName(departmentName);
+
+        if (dept == null) {
+            throw new RuntimeException("Department not found: " + departmentName);
         }
+       // step2:  fetch the list employees according to that department
+        List<EmployeeModel> employees = employeeRepo.findByDepartment(dept);
+        //step3: filter the  certain employees assigned to the ward from the complaint
+        Optional<EmployeeModel> matchingEmployee = employeeRepo.findAll().stream()
+                .filter(emp -> emp.getWards().stream()
+                        .anyMatch(ward -> ward.getId().equals(dto.getWards().getId())))
+                .findFirst();
+
+
+//        if (!employees.isEmpty()) {
+//            complaint.setAssignedEmployee(employees.get(0)); // First available employee
+//        }
+         //step4: assign if found
+        matchingEmployee.ifPresent(complaint::setAssignedEmployee);
 
         // 5. Save complaint
         complaintRepo.save(complaint);
@@ -122,25 +147,30 @@ public class ComplaintService {
 
     public List<ComplaintResponseDTO> getAllComplaints() {
         List<ComplaintModel> complaints = complaintRepo.findAll();
+        //calling the local ip to use in image
 
-        return complaints.stream().map(complaint -> new ComplaintResponseDTO(
-                complaint.getId(),
-                complaint.getDescription(),
-                complaint.getDepartment() != null ? complaint.getDepartment().getName() : null,
-                complaint.getWard() != null ? complaint.getWard().getId() : null,
-                complaint.getLocation(),
-                complaint.getImages() != null
-                        ? complaint.getImages().stream()
-                            .map(ImageModel::getImageUrl)
-                            .toList()
-                        : List.of(),
-                complaint.getSubmittedBy(),
-                complaint.getStatus().name(),
-                complaint.getAssignedEmployee() != null
-                        ? complaint.getAssignedEmployee().getFirstname() + " " + complaint.getAssignedEmployee().getLastname()
-                        : null,
-                complaint.getCreatedAt()
-        )).toList();
+
+            return complaints.stream().map(complaint -> new ComplaintResponseDTO(
+                    complaint.getId(),
+                    complaint.getDescription(),
+                    complaint.getDepartment() != null ? complaint.getDepartment().getName() : null,
+                    complaint.getWard() != null ? complaint.getWard().getName()  : null,
+                    complaint.getLocation(),
+                    complaint.getImages() != null
+                            ? complaint.getImages().stream()
+                                .map(
+                                        img -> "http://" + IpServices.getCurrentIP() + ":8080/uploads/" + img.getImageUrl()
+                                        ///  calling the local io address as we fetch the complaints for testing purpose
+                                )
+                                .toList()
+                            : List.of(),
+                    complaint.getSubmittedBy(),
+                    complaint.getStatus().name(),
+                    complaint.getAssignedEmployee() != null
+                            ? complaint.getAssignedEmployee()+ " " + complaint.getAssignedEmployee()
+                            : null,
+                    complaint.getCreatedAt()
+            )).toList();
     }
 
 
@@ -151,6 +181,8 @@ public class ComplaintService {
                  .map( complaint  -> new ComplaintResponseDTO(complaint) )
                  .collect(Collectors.toList());
      }
+
+
 
 }
 

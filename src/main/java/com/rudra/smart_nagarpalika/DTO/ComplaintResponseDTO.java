@@ -1,8 +1,7 @@
 package com.rudra.smart_nagarpalika.DTO;
 
 import com.rudra.smart_nagarpalika.Model.ComplaintModel;
-import com.rudra.smart_nagarpalika.Model.DepartmentModel;
-import com.rudra.smart_nagarpalika.Model.ImageModel;
+import com.rudra.smart_nagarpalika.Services.IpServices;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -15,7 +14,7 @@ public class ComplaintResponseDTO {
     private Long id;
     private String description;
     private String departmentName; // maps to DepartmentModel
-    private Long wardId;
+    private String wardName;
     private String location;
     private List<String> imageUrls;
     private String submittedBy;
@@ -23,40 +22,25 @@ public class ComplaintResponseDTO {
     private String assignedEmployeeName;
     private LocalDateTime createdAt;
 
+
     public ComplaintResponseDTO(ComplaintModel complaint) {
+
+
         this.id = complaint.getId();
         this.description = complaint.getDescription();
-
-        // Handle null safety
-
-        this.departmentName = complaint.getDepartment() != null
-                ? complaint.getDepartment().getName()
-                : null;
-
-
-        this.wardId = complaint.getWard() != null
-                ? complaint.getWard().getId()
-                : null;
-
+        this.departmentName = complaint.getDepartment() != null ? complaint.getDepartment().getName() : null;
+        this.wardName = complaint.getWard() != null ? complaint.getWard().getName() : null;
         this.location = complaint.getLocation();
-
-        // Make sure images are null-safe
         this.imageUrls = complaint.getImages() != null
-                ? complaint.getImages().stream()
-                .map(ImageModel::getImageUrl)
-                .collect(Collectors.toList())
+                ? complaint.getImages().stream().map(imageModel -> ""+imageModel.getImageUrl()).toList()
                 : List.of();
-
         this.submittedBy = complaint.getSubmittedBy();
-        this.status = complaint.getStatus() != null
-                ? complaint.getStatus().toString()
-                : "UNKNOWN";
-
+        this.status = complaint.getStatus().name();
         this.assignedEmployeeName = complaint.getAssignedEmployee() != null
-                ? complaint.getAssignedEmployee().getFirstname() + " " + complaint.getAssignedEmployee().getLastname()
+                ? complaint.getAssignedEmployee() + " "+ complaint.getAssignedEmployee()
                 : null;
-
         this.createdAt = complaint.getCreatedAt();
     }
+
 
 }

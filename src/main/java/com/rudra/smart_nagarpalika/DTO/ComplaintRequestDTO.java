@@ -1,6 +1,7 @@
 package com.rudra.smart_nagarpalika.DTO;
 
 import com.rudra.smart_nagarpalika.Model.DepartmentModel;
+import com.rudra.smart_nagarpalika.Model.WardsModel;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ public class ComplaintRequestDTO {
     private DepartmentModel department;
 //    private String category;
     private String location;
+    private WardsModel wards;
     private double latitude;
     private double longitude;
     private List<String> imageUrls ;

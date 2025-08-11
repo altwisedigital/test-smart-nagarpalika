@@ -1,12 +1,12 @@
 package com.rudra.smart_nagarpalika.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "wards")
@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Data   
 public class WardsModel {
 
     @Id
@@ -23,4 +24,13 @@ public class WardsModel {
     private String name;
 
     private LocalDateTime createdAt;
+
+
+    // Bidirectional mapping (I want to access employees from wards)
+    @ManyToMany(mappedBy = "wards", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<EmployeeModel> employees;
+
+
+
 }

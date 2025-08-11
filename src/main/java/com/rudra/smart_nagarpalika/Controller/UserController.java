@@ -2,12 +2,11 @@ package com.rudra.smart_nagarpalika.Controller;
 
 import com.rudra.smart_nagarpalika.DTO.ComplaintResponseDTO;
 import com.rudra.smart_nagarpalika.DTO.UserRegistrationDTO;
-import com.rudra.smart_nagarpalika.Model.ComplaintModel;
-import com.rudra.smart_nagarpalika.Model.DepartmentModel;
-import com.rudra.smart_nagarpalika.Model.UserModel;
-import com.rudra.smart_nagarpalika.Model.UserRole;
+import com.rudra.smart_nagarpalika.Model.*;
 import com.rudra.smart_nagarpalika.Services.DeparmentService;
+import com.rudra.smart_nagarpalika.Services.IpServices;
 import com.rudra.smart_nagarpalika.Services.UserServices;
+import com.rudra.smart_nagarpalika.Services.WardsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +24,7 @@ public class UserController {
 
     private final UserServices userService;
     private final DeparmentService deparmentService;
+     private final WardsService wardsService;
 
     @GetMapping("/complaints/by-username")
     @PreAuthorize("hasRole('USER')")
@@ -39,11 +39,46 @@ public class UserController {
         List<ComplaintModel> complaints = user.get().getComplaints();
 
         List<ComplaintResponseDTO> complaintDTOs = complaints.stream()
-                .map(ComplaintResponseDTO::new)
-                .collect(Collectors.toList());
+                .map(complaint -> new ComplaintResponseDTO(
+                        complaint.getId(),
+                        complaint.getDescription(),
+                        complaint.getDepartment() != null ? complaint.getDepartment().getName() : null,
+                        complaint.getWard() != null ? complaint.getWard().getName()  : null,
+                        complaint.getLocation(),
+                        complaint.getImages() != null
+                                ? complaint.getImages().stream()
+                                .map(
+                                        img -> "http://" + IpServices.getCurrentIP() + ":8080/uploads/" + img.getImageUrl()
+                                        ///  calling the local io address as we fetch the complaints for testing purpose
+                                )
+                                .toList()
+                                : List.of(),
+                        complaint.getSubmittedBy(),
+                        complaint.getStatus().name(),
+                        complaint.getAssignedEmployee() != null
+                                ? complaint.getAssignedEmployee()+ " " + complaint.getAssignedEmployee()
+                                : null,
+                        complaint.getCreatedAt()
+                )).toList();
+
         complaints.forEach(System.out::println); // or log it
 
         return ResponseEntity.ok(complaintDTOs);
+    }
+
+    @GetMapping("/get_wards")
+    @PreAuthorize("hasRole('USER') ")
+
+    public ResponseEntity<?> GetAllWards(){
+        try {
+            List<WardsModel> allWards = wardsService.GetAllWards();
+            return ResponseEntity.ok(
+                    allWards
+            );
+
+        } catch (Exception e) {
+            return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body("couldn't fetch the wards ERROR : "+e);
+        }
     }
 
 

@@ -8,12 +8,22 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ListResourceBundle;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class WardsService {
 
     private final WardsRepo wardsRepo;
+
+
+    //add all wards
+    public void addAllWards(List<WardsModel> wardsList) {
+        wardsList.forEach(ward -> ward.setCreatedAt(LocalDateTime.now())); // optional: set server time
+        wardsRepo.saveAll(wardsList);
+    }
+
 
     // create the wards
     public void createWards(WardsDTO dto){
