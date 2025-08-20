@@ -8,8 +8,8 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "image_model")
-public class ImageModel {
+@Table(name = "image_user")
+public class ImageByUserModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

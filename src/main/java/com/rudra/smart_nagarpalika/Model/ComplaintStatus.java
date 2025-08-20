@@ -1,6 +1,6 @@
 package com.rudra.smart_nagarpalika.Model;
 
-public enum ComplaintStatus {
+public enum         ComplaintStatus {
 
     Resolved,
     InProgress,

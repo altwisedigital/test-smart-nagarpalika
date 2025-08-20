@@ -48,7 +48,7 @@ public class UserController {
                         complaint.getImages() != null
                                 ? complaint.getImages().stream()
                                 .map(
-                                        img -> "http://" + IpServices.getCurrentIP() + ":8080/uploads/" + img.getImageUrl()
+                                        img -> "http://" + IpServices.getCurrentIP() + ":8080/uploads/citizen_image_uploads/" + img.getImageUrl()
                                         ///  calling the local io address as we fetch the complaints for testing purpose
                                 )
                                 .toList()

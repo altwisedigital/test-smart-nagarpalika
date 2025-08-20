@@ -19,8 +19,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 
 @Service
 @RequiredArgsConstructor
@@ -64,17 +63,17 @@ public class ComplaintService {
         complaint.setLongitude(dto.getLongitude());
 
          // saving images in proper table abd providing its id as mapped to the complaint list
-        List<ImageModel> imageModels = uploadedPaths.stream().map(url -> {
-            ImageModel img = new ImageModel();
+        List<ImageByUserModel> ImageBYUsers = uploadedPaths.stream().map(url -> {
+            ImageByUserModel img = new ImageByUserModel();
             img.setImageUrl(url);
             img.setComplaint(complaint); // set the FK
             return img;
         }).toList();
 
-        complaint.setImages(imageModels);
+        complaint.setImages(ImageBYUsers);
 
         complaint.setCreatedAt(LocalDateTime.now());
-        complaint.setStatus(ComplaintStatus.Pending);
+        complaint.setStatus(ComplaintStatus.InProgress);
         complaint.setSubmittedBy(user.getUsername());
         complaint.setUser(user);
 
@@ -83,7 +82,7 @@ public class ComplaintService {
           // Steps 1: get department and ward from the complaint
 
         String departmentName = dto.getDepartment().getName();
-        String wardsName = dto.getWards().getName();
+//        String wardsName = dto.getWards().getName();
 
         DepartmentModel dept = departmentRepo.findByName(departmentName);
 
@@ -99,11 +98,16 @@ public class ComplaintService {
                 .findFirst();
 
 
-//        if (!employees.isEmpty()) {
-//            complaint.setAssignedEmployee(employees.get(0)); // First available employee
-//        }
          //step4: assign if found
-        matchingEmployee.ifPresent(complaint::setAssignedEmployee);
+        matchingEmployee.ifPresent(employee -> {
+            // Set ManyToOne side
+            complaint.setAssignedEmployee(employee);
+
+            // Set ManyToMany side
+            employee.getAssignedComplaints().add(complaint);
+        });
+
+
 
         // 5. Save complaint
         complaintRepo.save(complaint);
@@ -130,18 +134,7 @@ public class ComplaintService {
 
 
 
-//    public List<String> getImageUrlsByUserId(Long userId) {
-//        List<ComplaintModel> complaints = complaintRepo.findByUserId(userId);
-//
-//        List<String> allImageUrls = new ArrayList<>();
-//        for (ComplaintModel complaint : complaints) {
-//            if (complaint.getImageUrls() != null) {
-//                allImageUrls.addAll(complaint.getImageUrls());
-//            }
-//        }
-//
-//        return allImageUrls;
-//    }
+
 
 
 
@@ -159,7 +152,7 @@ public class ComplaintService {
                     complaint.getImages() != null
                             ? complaint.getImages().stream()
                                 .map(
-                                        img -> "http://" + IpServices.getCurrentIP() + ":8080/uploads/" + img.getImageUrl()
+                                        img -> "http://" + IpServices.getCurrentIP() + ":8080/uploads/citizen_image_uploads/" + img.getImageUrl()
                                         ///  calling the local io address as we fetch the complaints for testing purpose
                                 )
                                 .toList()
@@ -167,7 +160,7 @@ public class ComplaintService {
                     complaint.getSubmittedBy(),
                     complaint.getStatus().name(),
                     complaint.getAssignedEmployee() != null
-                            ? complaint.getAssignedEmployee()+ " " + complaint.getAssignedEmployee()
+                            ? complaint.getAssignedEmployee().getFirstName()   + " " + complaint.getAssignedEmployee().getLastName()
                             : null,
                     complaint.getCreatedAt()
             )).toList();
@@ -178,8 +171,8 @@ public class ComplaintService {
          List<ComplaintModel> byUsername = complaintRepo.findBySubmittedBy(username);
 
          return byUsername.stream()
-                 .map( complaint  -> new ComplaintResponseDTO(complaint) )
-                 .collect(Collectors.toList());
+                 .map(ComplaintResponseDTO::new).toList();
+
      }
 
 

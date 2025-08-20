@@ -37,7 +37,7 @@ public class ComplaintResponseDTO {
         this.submittedBy = complaint.getSubmittedBy();
         this.status = complaint.getStatus().name();
         this.assignedEmployeeName = complaint.getAssignedEmployee() != null
-                ? complaint.getAssignedEmployee() + " "+ complaint.getAssignedEmployee()
+                ? complaint.getAssignedEmployee().getFirstName() + " "+ complaint.getAssignedEmployee().getLastName()
                 : null;
         this.createdAt = complaint.getCreatedAt();
     }

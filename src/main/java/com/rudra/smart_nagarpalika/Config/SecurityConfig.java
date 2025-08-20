@@ -48,9 +48,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/register/**,").permitAll()
+                        .requestMatchers("/auth/**", "/register/**","/employee/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/employee/**").hasRole("EMPLOYEE")
+//                        .requestMatchers("/employee/**").hasRole("EMPLOYEE")
                         .requestMatchers("/user/**").hasRole("USER")
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())

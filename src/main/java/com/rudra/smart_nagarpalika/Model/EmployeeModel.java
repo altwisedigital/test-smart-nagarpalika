@@ -46,6 +46,10 @@ public class EmployeeModel {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @OneToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id", unique = true, nullable = false)
+    private UserModel userAccount;
+
     // Many-to-Many relationship with Wards
     @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(

@@ -34,6 +34,9 @@ public class UserModel implements UserDetails {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @OneToOne(mappedBy = "userAccount", cascade = CascadeType.ALL)
+    private EmployeeModel employee;
+
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)

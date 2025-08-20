@@ -4,16 +4,32 @@ import com.rudra.smart_nagarpalika.DTO.DepartmentDTO;
 import com.rudra.smart_nagarpalika.Model.DepartmentModel;
 import com.rudra.smart_nagarpalika.Repository.DepartmentRepo;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class DeparmentService {
     final private DepartmentRepo departmentRepo;
 
+    // insert multiple departments at once
+      public void addDepartmentList(List<DepartmentModel> dept){
+          List<DepartmentModel> departmentsToInsert = dept.stream()
+                  .map(d -> {
+                      DepartmentModel department = new DepartmentModel();
+                      department.setName(d.getName());
+                      department.setCreatedAt(LocalDateTime.now());
+                      return department;
+                  })
+                  .collect(Collectors.toList());
+          departmentRepo.saveAll(departmentsToInsert);
+
+
+      }
  // crate department
     public void createDepartment(DepartmentDTO dto){
        DepartmentModel department = new DepartmentModel();

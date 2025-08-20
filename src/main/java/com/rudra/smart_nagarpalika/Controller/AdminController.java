@@ -2,21 +2,24 @@ package com.rudra.smart_nagarpalika.Controller;
 
 import com.rudra.smart_nagarpalika.DTO.*;
 import com.rudra.smart_nagarpalika.Model.*;
-import com.rudra.smart_nagarpalika.Repository.DepartmentRepo;
-import com.rudra.smart_nagarpalika.Repository.EmployeeRepo;
-import com.rudra.smart_nagarpalika.Repository.WardsRepo;
+
+import com.rudra.smart_nagarpalika.Repository.AlertRepo;
 import com.rudra.smart_nagarpalika.Services.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/admin")
@@ -25,14 +28,26 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     private final EmployeeService employeeService;
-    private final UserServices userServices;
+
     private final ComplaintService complaintService;
     private final DeparmentService deparmentService;
-
+    private final AlertRepo alertRepo;
     private final WardsService wardsService;
-    private final EmployeeRepo employeeRepo;
-    private final WardsRepo wardsRepo;
-    private final DepartmentRepo departmentRepo;
+
+    private final AlertsService alertsService;
+
+    /// =======================     employee Section     ==============================
+
+    /// create employees as a list at once (only for **POSTMAN**)
+
+
+   // create in bulk
+     @PostMapping("/insert_emp")
+     @PreAuthorize("hasRole('ADMIN')")
+     public ResponseEntity<List<EmployeeModel>> createEmployees(@RequestBody List<EmployeeRequestDTO> employeeDTOs) {
+         List<EmployeeModel> savedEmployees = employeeService.createEmployeesInBulk(employeeDTOs);
+         return ResponseEntity.ok(savedEmployees);
+     }
 
 
     // to create employees
@@ -52,7 +67,7 @@ public class AdminController {
         } catch (Exception e) {
             log.error("Unexpected error while creating employee", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse("Something went wrong. Please try again later.", false));
+                    .body(new ApiResponse("Something went wrong. Please try again later."+e, false));
         }
     }
 
@@ -134,54 +149,7 @@ public class AdminController {
 
 
 //    // to get employees
-//    @GetMapping("/get_employees")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public List<EmployeeModel> getAllEmployees() {
-//        return employeeService.getAllEmployees();
-//    }
-//
-//    // to update the employee
-//    @PutMapping("/update")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public ResponseEntity<?> updateEmployee(@RequestBody EmployeeDTO employeeDTO) {
-//        try {
-//            EmployeeModel updatedEmployee = employeeService.updateEmployee(employeeDTO);
-//            return ResponseEntity.ok(updatedEmployee);  // return updated data
-//        } catch (IllegalArgumentException e) {
-//            return ResponseEntity.badRequest().body(e.getMessage());
-//        } catch (Exception e) {
-//            return ResponseEntity.internalServerError().body("Something went wrong while updating employee.");
-//        }
-//    }
 
-
-    // to delete the employee by mobile
-
-//    @DeleteMapping("/delete/{mobile}")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public ResponseEntity<?> deleteEmployee(@PathVariable String mobile) {
-//        employeeService.deleteEmployeeByMobile(mobile);
-//        return ResponseEntity.ok("Employee Deleted");
-//    }
-
-
-    // to get all the departments
-
-//    @GetMapping("/departments")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public ResponseEntity<?> getAllDepartments() {
-//        try {
-//            var departments = Arrays.stream(Departments.values())
-//                    .map(dep -> new DepartmentResponse(dep.name(), dep.getDisplayName()))
-//                    .toList();
-//
-//            return ResponseEntity.ok(departments);
-//        } catch (Exception e) {
-//            log.error("Failed to fetch departments", e);
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(new ApiResponse("Failed to fetch departments", false));
-//        }
-//    }
 
     public record DepartmentResponse(String code, String displayName) {}
 
@@ -210,7 +178,17 @@ public class AdminController {
                     .body(new ApiResponse("Failed to fetch complaints", false));
         }
     }
-
+    /* ====  create  list of   ==== */
+    @PostMapping("/InsertDepartments")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> InsertMultipleDepartments(@RequestBody List<DepartmentModel> department){
+         try {
+             deparmentService.addDepartmentList(department);
+             return ResponseEntity.ok("Inserted this Departments: "+department);
+         } catch (RuntimeException e) {
+             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e);
+         }
+     }
   //create department
    @PostMapping("/create_department")
    @PreAuthorize("hasRole('ADMIN')")
@@ -261,7 +239,7 @@ public class AdminController {
         try {
             List<WardsModel> allWards = wardsService.GetAllWards();
             return ResponseEntity.ok(
-                    "wards:"+allWards
+                        allWards
             );
 
         } catch (Exception e) {
@@ -293,5 +271,91 @@ public class AdminController {
 //
 //
 //     }
+
+
+    /// ==================     AlertSection       =================
+
+
+ // create alert
+    @PostMapping(value = "/create_alert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> createAlert(
+            @RequestParam String title,
+            @RequestParam String description,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+
+        AlertRequestDto dto= new AlertRequestDto();
+        dto.setTitle(title);
+        dto.setDescription(description);
+        String response = alertsService.saveAlert(dto, image);
+        return ResponseEntity.ok(response);
+    }
+
+
+    // Get all alerts
+    @GetMapping("/get_all_alerts")
+    public ResponseEntity<?> getAllAlerts() {
+        try {
+            List<AlertResponseDTO> alerts = alertsService.getAlerts();
+            if (alerts.isEmpty()) {
+                return ResponseEntity.ok("No alerts found");
+            } else {
+                return ResponseEntity.ok(alerts);
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching alerts: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unable to load alerts. Please try again later.");
+        }
+    }
+
+//    // Get alert by ID
+//    @GetMapping("delete_alert/{id}")
+//    public ResponseEntity<?> getAlertById(@PathVariable Long id) {
+//        try {
+//            AlertsModel alert = alertsService.getAlertById(id);
+//            if (alert != null) {
+//                return ResponseEntity.ok(alert);
+//            } else {
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                        .body("Alert not found with ID: " + id);
+//            }
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body("Invalid request: " + e.getMessage());
+//        } catch (Exception e) {
+//            System.err.println("Error fetching alert: " + e.getMessage());
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body("Error occurred while fetching alert. Please try again later.");
+//        }
+//    }
+
+    // Delete alert
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteAlert(@PathVariable Long id) {
+        try {
+            AlertsModel alert = alertsService.getAlertById(id);
+            if (alert != null) {
+                boolean isDeleted = alertsService.DeleteAlert(id);
+                if (isDeleted) {
+                    return ResponseEntity.ok("Alert with ID " + id +"\n"+ alert+ " has been deleted successfully");
+                } else {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body("Failed to delete alert with ID: " + id);
+                }
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Alert not found with ID: " + id);
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid request: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error deleting alert: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error occurred while deleting alert. Please try again later.");
+        }
+    }
+
+
 
 }

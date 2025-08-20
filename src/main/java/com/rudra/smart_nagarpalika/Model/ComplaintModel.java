@@ -1,5 +1,6 @@
 package com.rudra.smart_nagarpalika.Model;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,9 +27,16 @@ public class ComplaintModel {
 
     private String location;
 
-//    @ElementCollection
+// images bu the user
+@Nullable
 @OneToMany(mappedBy = "complaint", cascade = CascadeType.ALL, orphanRemoval = true)
-private List<ImageModel> images = new ArrayList<>();
+private List<ImageByUserModel> images = new ArrayList<>();
+
+
+// video by user
+    @Nullable
+    @OneToMany(mappedBy = "complaint", cascade = CascadeType.ALL, orphanRemoval = true)
+    private  List<VideoByUserModel> video = new ArrayList<>();
 
 
     private LocalDateTime createdAt;

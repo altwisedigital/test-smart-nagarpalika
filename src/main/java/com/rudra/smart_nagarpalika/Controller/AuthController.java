@@ -1,10 +1,13 @@
 package com.rudra.smart_nagarpalika.Controller;
 
 
+import com.rudra.smart_nagarpalika.DTO.EmployeeDetailsDTO;
 import com.rudra.smart_nagarpalika.DTO.LoginRequestDTO;
+import com.rudra.smart_nagarpalika.DTO.LoginResponseExtended;
 import com.rudra.smart_nagarpalika.DTO.UserRegistrationDTO;
 import com.rudra.smart_nagarpalika.Model.UserModel;
 import com.rudra.smart_nagarpalika.Model.UserRole;
+import com.rudra.smart_nagarpalika.Services.EmployeeService;
 import com.rudra.smart_nagarpalika.Services.UserServices;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +35,12 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserServices userService;
+    private final EmployeeService employeeService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-            // Authenticate using username and password
+            // Authenticate
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.username(),
@@ -44,21 +48,30 @@ public class AuthController {
                     )
             );
 
-            // Get user by username
-            Optional<UserModel> user = userService.getUserByUsername(request.username());
-            if (user.isEmpty()) {
+            // Get user entity
+            Optional<UserModel> userOpt = userService.getUserByUsername(request.username());
+            if (userOpt.isEmpty()) {
                 return ResponseEntity.status(404).body(new ApiResponse("User not found", false));
             }
 
-            // Extract role (e.g., ROLE_ADMIN, ROLE_EMPLOYEE, ROLE_CITIZEN)
+            UserModel user = userOpt.get();
+
+            // Get role
             String role = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .findFirst()
                     .orElse("ROLE_UNKNOWN");
 
-            log.info("User {} logged in with role {}", user.get().getUsername(), role);
+            // If role is EMPLOYEE, fetch extra details
+            EmployeeDetailsDTO employeeDetails = null;
+            if (user.getRole() == UserRole.EMPLOYEE) {
+                employeeDetails = employeeService.getEmployeeDetailsByUser(user);
+            }
 
-            return ResponseEntity.ok(new LoginResponse(user.get().getUsername(), role));
+
+            log.info("User {} logged in with role {}", user.getUsername(), role);
+
+            return ResponseEntity.ok(new LoginResponse(user.getUsername(), role, employeeDetails));
 
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401).body(new ApiResponse("Invalid credentials", false));
@@ -68,10 +81,13 @@ public class AuthController {
         }
     }
 
-
     public record LoginRequest(String username, String password) {}
-    public record LoginResponse(String username, String role) {}
+    public record LoginResponse(String username, String role, EmployeeDetailsDTO employeeDetails) {}
     public record ApiResponse(String message, boolean success) {}
+
+
+
+
 
 
     @PostMapping("/create_user")

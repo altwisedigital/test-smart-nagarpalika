@@ -1,7 +1,9 @@
 package com.rudra.smart_nagarpalika.Services;
 
+import com.rudra.smart_nagarpalika.DTO.EmployeeDetailsDTO;
 import com.rudra.smart_nagarpalika.Model.UserModel;
 import com.rudra.smart_nagarpalika.Model.UserRole;
+import com.rudra.smart_nagarpalika.Repository.EmployeeRepo;
 import com.rudra.smart_nagarpalika.Repository.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,9 @@ import java.util.Optional;
 public class UserServices {
 
     private final UserRepo userRepo;
+    private final EmployeeRepo employeeRepo;
+
+
 
     public String saveUser(UserModel user) {
         // Validation

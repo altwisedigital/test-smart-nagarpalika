@@ -24,9 +24,13 @@ public class EmployeeRequestDTO {
     @NotNull(message = "Department is required")
     private Long departmentId;
 
+    private  String username;
+
+    private String password;
 
     private List<Long> wardsId;
 
 //    @NotBlank(message = "Role is required")
+
     private String role;
 }
