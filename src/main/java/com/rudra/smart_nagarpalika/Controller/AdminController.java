@@ -16,9 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 
 @RestController
@@ -41,7 +39,7 @@ public class AdminController {
     /// create employees as a list at once (only for **POSTMAN**)
 
 
-   // create in bulk
+   // create in bul
      @PostMapping("/insert_emp")
      @PreAuthorize("hasRole('ADMIN')")
      public ResponseEntity<List<EmployeeModel>> createEmployees(@RequestBody List<EmployeeRequestDTO> employeeDTOs) {
@@ -71,6 +69,32 @@ public class AdminController {
         }
     }
 
+    @GetMapping("assignedComplaint/{name}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> fetchAssignedComplaint(@PathVariable String name) {
+        try {
+            List<ComplaintResponseDTO> assignedComplaint = employeeService.fetchAssignedComplaint(name);
+
+            if (assignedComplaint.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                        .body(Collections.singletonMap("message", "No data found for the user: " + name));
+            }
+
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("message", "Here is the list of assigned complaints for user: " + name);
+            response.put("count", assignedComplaint.size());
+            response.put("data", assignedComplaint);
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = Map.of(
+                    "message", "Error fetching complaints",
+                    "error", e.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
     @GetMapping("/employees")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllEmployees() {

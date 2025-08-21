@@ -28,6 +28,8 @@ public class EmployeeRequestDTO {
 
     private String password;
 
+    private String position;
+
     private List<Long> wardsId;
 
 //    @NotBlank(message = "Role is required")

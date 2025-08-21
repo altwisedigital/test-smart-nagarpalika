@@ -62,4 +62,15 @@ private List<ImageByUserModel> images = new ArrayList<>();
     @JoinColumn(name = "ward_name")
     private WardsModel ward;
 
+    ///  employee Section work Flow
+    // Description added by employee after fixing
+    private String employeeRemarks;
+
+    // Images uploaded by employee as proof
+    @OneToMany(mappedBy = "complaint", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ImageByEmployeeModel> employeeImages = new ArrayList<>();
+
+    // Work completion time
+    private LocalDateTime completedAt;
+
 }

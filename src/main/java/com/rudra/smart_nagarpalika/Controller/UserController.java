@@ -43,28 +43,53 @@ public class UserController {
                         complaint.getId(),
                         complaint.getDescription(),
                         complaint.getDepartment() != null ? complaint.getDepartment().getName() : null,
-                        complaint.getWard() != null ? complaint.getWard().getName()  : null,
+                        complaint.getWard() != null ? complaint.getWard().getName() : null,
                         complaint.getLocation(),
+
+                        // citizen images
                         complaint.getImages() != null
                                 ? complaint.getImages().stream()
-                                .map(
-                                        img -> "http://" + IpServices.getCurrentIP() + ":8080/uploads/citizen_image_uploads/" + img.getImageUrl()
-                                        ///  calling the local io address as we fetch the complaints for testing purpose
-                                )
+                                .map(img -> "http://" + IpServices.getCurrentIP()
+                                        + ":8080/uploads/citizen_image_uploads/"
+                                        + img.getImageUrl())
                                 .toList()
                                 : List.of(),
+
+                        // citizen videos
+                        complaint.getVideo() != null
+                                ? complaint.getVideo().stream()
+                                .map(video -> "http://" + IpServices.getCurrentIP()
+                                        + ":8080/uploads/citizen_video_uploads/"
+                                        + video.getVideoUrl())
+                                .toList()
+                                : List.of(),
+
                         complaint.getSubmittedBy(),
+                        complaint.getLatitude(),
+                        complaint.getLongitude(),
                         complaint.getStatus().name(),
                         complaint.getAssignedEmployee() != null
-                                ? complaint.getAssignedEmployee()+ " " + complaint.getAssignedEmployee()
+                                ? complaint.getAssignedEmployee().getFirstName() + " " + complaint.getAssignedEmployee().getLastName()
                                 : null,
-                        complaint.getCreatedAt()
-                )).toList();
+                        complaint.getCreatedAt(),
+                        complaint.getEmployeeRemarks(),
 
-        complaints.forEach(System.out::println); // or log it
+                        // employee images
+                        complaint.getEmployeeImages() != null
+                                ? complaint.getEmployeeImages().stream()
+                                .map(img -> "http://" + IpServices.getCurrentIP()
+                                        + ":8080/uploads/employee_image_uploads/"
+                                        + img.getImageUrl())
+                                .toList()
+                                : List.of(),
+
+                        complaint.getCompletedAt()
+                ))
+                .toList();
 
         return ResponseEntity.ok(complaintDTOs);
     }
+
 
     @GetMapping("/get_wards")
     @PreAuthorize("hasRole('USER') ")

@@ -56,7 +56,7 @@ public class AuthController {
 
             UserModel user = userOpt.get();
 
-            // Get role
+            // Get the role for the employee
             String role = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .findFirst()

@@ -16,7 +16,7 @@ public class ImageService {
 
     private static final String UPLOAD_DIR = "C:/Users/rudra/OneDrive/Desktop/Office_projects/uploads/citizen_image_uploads/";
     private static final String ALERT_UPLOAD_DIR= "C:/Users/rudra/OneDrive/Desktop/Office_projects/uploads/Alert_image_uploads/";
-
+    private static  final String EMPLOYEE_IMG_DIR = "C:/Users/rudra/OneDrive/Desktop/Office_projects/uploads/Employee_Image_Uploads/";
 
     public String saveImage(MultipartFile imageFile) throws IOException {
         if (imageFile.isEmpty()) {
@@ -27,6 +27,29 @@ public class ImageService {
         String filename = UUID.randomUUID() + "_" + cleanName;
 
         Path path = Paths.get(UPLOAD_DIR + filename);
+
+
+        Files.createDirectories(path.getParent());
+
+        Files.copy(imageFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+
+        log.info("Image saved at: {}", path.toString());
+
+        return  filename; // Return a relative path
+    }
+
+
+
+    // to save the images By employee
+    public String saveEmployeeImage(MultipartFile imageFile) throws IOException {
+        if (imageFile.isEmpty()) {
+            throw new IOException("Image file is empty.");
+        }
+
+        String cleanName = Objects.requireNonNull(imageFile.getOriginalFilename()).replaceAll("\\s+", "_");
+        String filename = UUID.randomUUID() + "_" + cleanName;
+
+        Path path = Paths.get(EMPLOYEE_IMG_DIR + filename);
 
 
         Files.createDirectories(path.getParent());

@@ -34,6 +34,9 @@ public class EmployeeModel {
     @Column(nullable = false)
     private UserRole role;
 
+    @Column(nullable = true)
+    private String position;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     private DepartmentModel department;

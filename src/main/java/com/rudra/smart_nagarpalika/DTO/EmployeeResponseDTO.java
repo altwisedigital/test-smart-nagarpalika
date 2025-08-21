@@ -1,9 +1,10 @@
     package com.rudra.smart_nagarpalika.DTO;
-
     import com.rudra.smart_nagarpalika.Model.EmployeeModel;
+
     import com.rudra.smart_nagarpalika.Model.WardsModel;
-    import lombok.Builder;
+
     import lombok.Data;
+
 
     import java.util.List;
     import java.util.stream.Collectors;
@@ -19,6 +20,7 @@
         private List<String> wardNames; // Multiple wards
         private String role;
 
+
         public EmployeeResponseDTO(EmployeeModel employee) {
             this.id = employee.getId();
             this.firstName = employee.getFirstName();
@@ -29,6 +31,8 @@
             this.wardNames = employee.getWards() != null
                     ? employee.getWards().stream().map(WardsModel::getName).collect(Collectors.toList())
                     : List.of();
+
+//            this.assignedComplaints = employee.getAssignedComplaints();
         }
 
 

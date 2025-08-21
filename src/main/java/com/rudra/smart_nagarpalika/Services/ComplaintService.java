@@ -139,35 +139,60 @@ public class ComplaintService {
 
 
     public List<ComplaintResponseDTO> getAllComplaints() {
-        List<ComplaintModel> complaints = complaintRepo.findAll();
-        //calling the local ip to use in image
+        return complaintRepo.findAll()
+                .stream()
+                .map(complaint -> new ComplaintResponseDTO(
+                        complaint.getId(),
+                        complaint.getDescription(),
+                        complaint.getDepartment() != null ? complaint.getDepartment().getName() : null,
+                        complaint.getWard() != null ? complaint.getWard().getName() : null,
+                        complaint.getLocation(),
 
-
-            return complaints.stream().map(complaint -> new ComplaintResponseDTO(
-                    complaint.getId(),
-                    complaint.getDescription(),
-                    complaint.getDepartment() != null ? complaint.getDepartment().getName() : null,
-                    complaint.getWard() != null ? complaint.getWard().getName()  : null,
-                    complaint.getLocation(),
-                    complaint.getImages() != null
-                            ? complaint.getImages().stream()
-                                .map(
-                                        img -> "http://" + IpServices.getCurrentIP() + ":8080/uploads/citizen_image_uploads/" + img.getImageUrl()
-                                        ///  calling the local io address as we fetch the complaints for testing purpose
-                                )
+                        // user images
+                        complaint.getImages() != null
+                                ? complaint.getImages().stream()
+                                .map(img -> "http://" + IpServices.getCurrentIP()
+                                        + ":8080/uploads/citizen_image_uploads/"
+                                        + img.getImageUrl())
                                 .toList()
-                            : List.of(),
-                    complaint.getSubmittedBy(),
-                    complaint.getStatus().name(),
-                    complaint.getAssignedEmployee() != null
-                            ? complaint.getAssignedEmployee().getFirstName()   + " " + complaint.getAssignedEmployee().getLastName()
-                            : null,
-                    complaint.getCreatedAt()
-            )).toList();
+                                : List.of(),
+
+                        // user videos
+                        complaint.getVideo() != null
+                                ? complaint.getVideo().stream()
+                                .map(video -> "http://" + IpServices.getCurrentIP()
+                                        + ":8080/uploads/citizen_video_uploads/"
+                                        + video.getVideoUrl())
+                                .toList()
+                                : List.of(),
+
+                        complaint.getSubmittedBy(),
+                        complaint.getLatitude(),
+                        complaint.getLongitude(),
+                        complaint.getStatus().name(),
+                        complaint.getAssignedEmployee() != null
+                                ? complaint.getAssignedEmployee().getFirstName() + " " + complaint.getAssignedEmployee().getLastName()
+                                : null,
+                        complaint.getCreatedAt(),
+                        complaint.getEmployeeRemarks(),
+
+                        // employee images
+                        complaint.getEmployeeImages() != null
+                                ? complaint.getEmployeeImages().stream()
+                                .map(img -> "http://" + IpServices.getCurrentIP()
+                                        + ":8080/uploads/employee_image_uploads/"
+                                        + img.getImageUrl())
+                                .toList()
+                                : List.of(),
+
+                        complaint.getCompletedAt()
+                ))
+                .toList();
     }
 
 
-        public  List<ComplaintResponseDTO> getComplaintsByUsername(String  username){
+
+    public  List<ComplaintResponseDTO> getComplaintsByUsername(String  username){
          List<ComplaintModel> byUsername = complaintRepo.findBySubmittedBy(username);
 
          return byUsername.stream()

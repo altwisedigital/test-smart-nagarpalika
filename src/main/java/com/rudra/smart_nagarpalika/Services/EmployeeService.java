@@ -5,17 +5,18 @@ import com.rudra.smart_nagarpalika.DTO.EmployeeDetailsDTO;
 import com.rudra.smart_nagarpalika.DTO.EmployeeRequestDTO;
 import com.rudra.smart_nagarpalika.DTO.EmployeeResponseDTO;
 import com.rudra.smart_nagarpalika.Model.*;
-import com.rudra.smart_nagarpalika.Repository.EmployeeRepo;
-import com.rudra.smart_nagarpalika.Repository.DepartmentRepo;
-import com.rudra.smart_nagarpalika.Repository.UserRepo;
-import com.rudra.smart_nagarpalika.Repository.WardsRepo;
+import com.rudra.smart_nagarpalika.Repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.*;
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +33,9 @@ public class EmployeeService {
     private final WardsRepo wardsRepo;
     private final EmployeeRepo employeeRepo;
     private final UserRepo userRepo;
+    private final ComplaintRepo complaintRepo;
+    private final ImageByEmployeeRepo  imageByEmployeeRepo;
+    private final ImageService imageService;
 
 
 
@@ -51,39 +55,65 @@ public class EmployeeService {
                 .orElse(null);
     }
 
-    // fetch complaint by employee name
-    public List<ComplaintResponseDTO> fetchAssignedComplaint(String name){
+    public List<ComplaintResponseDTO> fetchAssignedComplaint(String name) {
         EmployeeModel emp = employeeRepository.findByfirstName(name);
         if (emp == null) {
-            throw new RuntimeException("Employee not found with name: " +  name);
+            throw new RuntimeException("Employee not found with name: " + name);
         }
+
         return emp.getAssignedComplaints()
                 .stream()
                 .map(complaint -> new ComplaintResponseDTO(
                         complaint.getId(),
                         complaint.getDescription(),
                         complaint.getDepartment() != null ? complaint.getDepartment().getName() : null,
-                        complaint.getWard() != null ? complaint.getWard().getName()  : null,
+                        complaint.getWard() != null ? complaint.getWard().getName() : null,
                         complaint.getLocation(),
+
+                        // user images
                         complaint.getImages() != null
                                 ? complaint.getImages().stream()
-                                .map(
-                                        img -> "http://" + IpServices.getCurrentIP() + ":8080/uploads/citizen_image_uploads/" + img.getImageUrl()
-                                        ///  calling the local io address as we fetch the complaints for testing purpose
-                                )
+                                .map(img -> "http://" + IpServices.getCurrentIP()
+                                        + ":8080/uploads/citizen_image_uploads/"
+                                        + img.getImageUrl())
                                 .toList()
                                 : List.of(),
+
+                        // user videos
+                        complaint.getVideo() != null
+                                ? complaint.getVideo().stream()
+                                .map(video -> "http://" + IpServices.getCurrentIP()
+                                        + ":8080/uploads/citizen_video_uploads/"
+                                        + video.getVideoUrl())
+                                .toList()
+                                : List.of(),
+
                         complaint.getSubmittedBy(),
+                        complaint.getLatitude(),
+                        complaint.getLongitude(),
                         complaint.getStatus().name(),
                         complaint.getAssignedEmployee() != null
-                                ? complaint.getAssignedEmployee().getFirstName()   + " " + complaint.getAssignedEmployee().getLastName()
+                                ? complaint.getAssignedEmployee().getFirstName() + " " + complaint.getAssignedEmployee().getLastName()
                                 : null,
-                        complaint.getCreatedAt()))
-                .collect(Collectors.toList());
+                        complaint.getCreatedAt(),
+                        complaint.getEmployeeRemarks(),
 
+                        // employee images
+                        complaint.getEmployeeImages() != null
+                                ? complaint.getEmployeeImages().stream()
+                                .map(img -> "http://" + IpServices.getCurrentIP()
+                                        + ":8080/uploads/employee_image_uploads/"
+                                        + img.getImageUrl())
+                                .toList()
+                                : List.of(),
+
+                        complaint.getCompletedAt()
+                ))
+                .toList();
     }
 
-  // create multiple eployees at once
+
+    // create multiple eployees at once
 
     @Transactional
     public List<EmployeeModel> createEmployeesInBulk(List<EmployeeRequestDTO> employeeDTOs) {
@@ -200,6 +230,56 @@ public class EmployeeService {
             return Optional.empty();
         }
     }
+
+    @Transactional
+    public String completeComplaint(Long complaintId, String repairDescription, List<MultipartFile> imageFiles) {
+        // 1. Fetch complaint
+        ComplaintModel complaint = complaintRepo.findById(complaintId)
+                .orElseThrow(() -> new RuntimeException("Complaint not found"));
+
+        List<String> uploadedPaths = new ArrayList<>();
+
+        // 2. Save image files
+        for (MultipartFile file : imageFiles) {
+            if (!file.isEmpty()) {
+                try {
+                    String path = imageService.saveEmployeeImage(file);
+                             // ✅ same as user
+                    uploadedPaths.add(path);
+                } catch (IOException e) {
+                    log.error("Failed to save image: {}", file.getOriginalFilename(), e);
+                    throw new RuntimeException("Image upload failed: " + file.getOriginalFilename());
+                }
+            }
+        }
+
+        // 3. Optional validation
+        if (uploadedPaths.isEmpty()) {
+            throw new RuntimeException("No valid images were uploaded by employee");
+        }
+
+        // 4. Update complaint details
+        complaint.setEmployeeRemarks(repairDescription);
+        complaint.setStatus(ComplaintStatus.Resolved); // ✅ enum update
+        complaint.setCompletedAt(LocalDateTime.now());
+
+        // 5. Save images in employee image table
+        List<ImageByEmployeeModel> imagesByEmployee = uploadedPaths.stream().map(url -> {
+            ImageByEmployeeModel img = new ImageByEmployeeModel();
+            img.setImageUrl(url);
+            img.setComplaint(complaint); // set FK
+            return img;
+        }).toList();
+
+        complaint.getEmployeeImages().addAll(imagesByEmployee);
+
+        // 6. Save complaint (cascade saves employee images too)
+        complaintRepo.save(complaint);
+
+        return "Complaint updated successfully by employee";
+    }
+
+
 
     // Delete Employee
     public boolean deleteEmployee(Long id) {
