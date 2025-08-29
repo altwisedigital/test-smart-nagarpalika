@@ -31,7 +31,7 @@ public class EmployeeController {
             @PathVariable Long id,
             @RequestParam("repairDescription") String repairDescription,
             @RequestParam("images") List<MultipartFile> imageFiles
-    ) {
+    ) { 
         try {
             log.info("Employee updating complaint {} with remarks and {} images", id, imageFiles.size());
 

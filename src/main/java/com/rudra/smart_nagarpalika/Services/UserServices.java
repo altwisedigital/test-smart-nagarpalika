@@ -1,6 +1,7 @@
 package com.rudra.smart_nagarpalika.Services;
 
 import com.rudra.smart_nagarpalika.DTO.EmployeeDetailsDTO;
+import com.rudra.smart_nagarpalika.DTO.UserResponseDTO;
 import com.rudra.smart_nagarpalika.Model.UserModel;
 import com.rudra.smart_nagarpalika.Model.UserRole;
 import com.rudra.smart_nagarpalika.Repository.EmployeeRepo;
@@ -9,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -18,7 +21,17 @@ public class UserServices {
     private final UserRepo userRepo;
     private final EmployeeRepo employeeRepo;
 
-
+    /**
+     * Get all users by specific role
+     * @param role UserRole enum
+     * @return List of UserResponseDTO
+     */
+    public List<UserResponseDTO> getUsersByRole(UserRole role) {
+        List<UserModel> users = userRepo.findByRole(role);
+        return users.stream()
+                .map(UserResponseDTO::new)
+                .collect(Collectors.toList());
+    }
 
     public String saveUser(UserModel user) {
         // Validation

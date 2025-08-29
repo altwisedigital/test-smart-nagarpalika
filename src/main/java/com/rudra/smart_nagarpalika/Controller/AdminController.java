@@ -4,6 +4,7 @@ import com.rudra.smart_nagarpalika.DTO.*;
 import com.rudra.smart_nagarpalika.Model.*;
 
 import com.rudra.smart_nagarpalika.Repository.AlertRepo;
+import com.rudra.smart_nagarpalika.Repository.UserRepo;
 import com.rudra.smart_nagarpalika.Services.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -31,8 +33,24 @@ public class AdminController {
     private final DeparmentService deparmentService;
     private final AlertRepo alertRepo;
     private final WardsService wardsService;
-
+    private final UserServices userServices;
     private final AlertsService alertsService;
+
+
+    /// =======================     Citizen Section     ==============================
+
+    @GetMapping("/by-role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserResponseDTO>> getUsersByRole(
+          ) {
+        try {
+            List<UserResponseDTO> users = userServices.getUsersByRole(UserRole.USER);
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
 
     /// =======================     employee Section     ==============================
 
