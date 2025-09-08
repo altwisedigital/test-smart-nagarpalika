@@ -9,4 +9,5 @@ public class AlertRequestDto {
     private MultipartFile image;
     private String title;
     private String description;
+    private String type;
 }

@@ -1,12 +1,12 @@
-
 package com.rudra.smart_nagarpalika.Services;
+
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.*;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -14,76 +14,49 @@ import java.util.UUID;
 @Slf4j
 public class ImageService {
 
-    private static final String UPLOAD_DIR = "C:/Users/rudra/OneDrive/Desktop/Office_projects/uploads/citizen_image_uploads/";
-    private static final String ALERT_UPLOAD_DIR= "C:/Users/rudra/OneDrive/Desktop/Office_projects/uploads/Alert_image_uploads/";
-    private static  final String EMPLOYEE_IMG_DIR = "C:/Users/rudra/OneDrive/Desktop/Office_projects/uploads/Employee_Image_Uploads/";
+    @Value("${upload.citizen.dir}")
+    private String citizenUploadDir;
 
-    public String saveImage(MultipartFile imageFile) throws IOException {
-        if (imageFile.isEmpty()) {
-            throw new IOException("Image file is empty.");
-        }
+    @Value("${upload.employee.dir}")
+    private String employeeUploadDir;
 
-        String cleanName = Objects.requireNonNull(imageFile.getOriginalFilename()).replaceAll("\\s+", "_");
-        String filename = UUID.randomUUID() + "_" + cleanName;
+    @Value("${upload.alert.dir}")
+    private String alertUploadDir;
 
-        Path path = Paths.get(UPLOAD_DIR + filename);
+    @Value("${upload.category.dir}")
+    private String categoryLogoDir;
 
-
-        Files.createDirectories(path.getParent());
-
-        Files.copy(imageFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-
-        log.info("Image saved at: {}", path.toString());
-
-        return  filename; // Return a relative path
-    }
-
-
-
-    // to save the images By employee
-    public String saveEmployeeImage(MultipartFile imageFile) throws IOException {
-        if (imageFile.isEmpty()) {
-            throw new IOException("Image file is empty.");
-        }
-
-        String cleanName = Objects.requireNonNull(imageFile.getOriginalFilename()).replaceAll("\\s+", "_");
-        String filename = UUID.randomUUID() + "_" + cleanName;
-
-        Path path = Paths.get(EMPLOYEE_IMG_DIR + filename);
-
-
-        Files.createDirectories(path.getParent());
-
-        Files.copy(imageFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-
-        log.info("Image saved at: {}", path.toString());
-
-        return  filename; // Return a relative path
-    }
-
-
-    // to save the image on the dir for alerts
- // public access URL
-
-    public String saveAlertImage(MultipartFile imageFile) throws IOException {
+    private String saveFile(MultipartFile imageFile, String baseDir) throws IOException {
         if (imageFile.isEmpty()) {
             throw new IOException("Image file is empty.");
         }
 
         String cleanName = Objects.requireNonNull(imageFile.getOriginalFilename())
                 .replaceAll("\\s+", "_");
-        String cleanPrefix = LocalDateTime.now().toString()
-                .replaceAll("[\\s:]", "_");
-        String filename = cleanPrefix + "_" + cleanName;
+        String filename = UUID.randomUUID() + "_" + cleanName;
 
-        Path path = Paths.get(ALERT_UPLOAD_DIR + filename);
-
+        Path path = Paths.get(baseDir, filename);
         Files.createDirectories(path.getParent());
         Files.copy(imageFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
 
-        log.info("Image saved at: {}", path.toString());
+        log.info("Image saved at: {}", path.toAbsolutePath());
 
-        // Return full public URL instead of just filename
-        return  filename;
+        return filename; // or return path.toString() if you prefer
+    }
+
+    public String saveCitizenImage(MultipartFile imageFile) throws IOException {
+        return saveFile(imageFile, citizenUploadDir);
+    }
+
+    public String saveEmployeeImage(MultipartFile imageFile) throws IOException {
+        return saveFile(imageFile, employeeUploadDir);
+    }
+
+    public String saveAlertImage(MultipartFile imageFile) throws IOException {
+        return saveFile(imageFile, alertUploadDir);
+    }
+
+    public String saveCategoryLogo(MultipartFile imageFile) throws IOException {
+        return saveFile(imageFile, categoryLogoDir);
     }
 }

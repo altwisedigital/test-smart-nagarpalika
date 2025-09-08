@@ -39,7 +39,7 @@ public class ComplaintService {
         for (MultipartFile file : imageFiles) {
             if (!file.isEmpty()) {
                 try {
-                    String path = imageService.saveImage(file);
+                    String path = imageService.saveCitizenImage(file);
                     uploadedPaths.add(path);
                 } catch (IOException e) {
                     log.error("Failed to save image: {}", file.getOriginalFilename(), e);

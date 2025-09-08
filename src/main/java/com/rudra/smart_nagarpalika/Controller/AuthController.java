@@ -55,6 +55,7 @@ public class AuthController {
             }
 
             UserModel user = userOpt.get();
+            //  ggte the password  for the user
 
             // Get the role for the employee
             String role = authentication.getAuthorities().stream()

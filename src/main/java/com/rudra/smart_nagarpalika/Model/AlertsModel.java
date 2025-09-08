@@ -29,4 +29,6 @@ public class AlertsModel {
 
      private LocalDateTime createdAt;
 
+     private String type;
+
 }

@@ -1,12 +1,10 @@
 package com.rudra.smart_nagarpalika.Controller;
 
+import com.rudra.smart_nagarpalika.DTO.AlertResponseDTO;
 import com.rudra.smart_nagarpalika.DTO.ComplaintResponseDTO;
 import com.rudra.smart_nagarpalika.DTO.UserRegistrationDTO;
 import com.rudra.smart_nagarpalika.Model.*;
-import com.rudra.smart_nagarpalika.Services.DeparmentService;
-import com.rudra.smart_nagarpalika.Services.IpServices;
-import com.rudra.smart_nagarpalika.Services.UserServices;
-import com.rudra.smart_nagarpalika.Services.WardsService;
+import com.rudra.smart_nagarpalika.Services.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +23,7 @@ public class UserController {
     private final UserServices userService;
     private final DeparmentService deparmentService;
      private final WardsService wardsService;
+     private final AlertsService alertsService;
 
     @GetMapping("/complaints/by-username")
     @PreAuthorize("hasRole('USER')")
@@ -118,6 +117,25 @@ public class UserController {
             return ResponseEntity.ok(departments);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Couldn't fetch the departments now"+e);
+        }
+    }
+
+    /// ============================ alert department API'S ======================================
+
+    @GetMapping("/get_all_alerts")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> getAllAlerts() {
+        try {
+            List<AlertResponseDTO> alerts = alertsService.getAlerts();
+            if (alerts.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+            } else {
+                return ResponseEntity.ok(alerts);
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching alerts: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Unable to load alerts. Please try again later.");
         }
     }
 

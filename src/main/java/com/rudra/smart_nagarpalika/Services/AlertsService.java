@@ -43,6 +43,7 @@ public class AlertsService {
       }
       AlertsModel alerts = new AlertsModel();
       alerts.setTitle(dto.getTitle());
+      alerts.setType(dto.getType());
       alerts.setDescription(dto.getDescription());
       alerts.setCreatedAt(LocalDateTime.now());
 

@@ -31,10 +31,12 @@ public class AdminController {
 
     private final ComplaintService complaintService;
     private final DeparmentService deparmentService;
-    private final AlertRepo alertRepo;
+
     private final WardsService wardsService;
     private final UserServices userServices;
     private final AlertsService alertsService;
+    private final CategoryService categoryService;
+    private final LocationService locationService;
 
 
     /// =======================     Citizen Section     ==============================
@@ -42,7 +44,7 @@ public class AdminController {
     @GetMapping("/by-role")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponseDTO>> getUsersByRole(
-          ) {
+    ) {
         try {
             List<UserResponseDTO> users = userServices.getUsersByRole(UserRole.USER);
             return ResponseEntity.ok(users);
@@ -57,13 +59,13 @@ public class AdminController {
     /// create employees as a list at once (only for **POSTMAN**)
 
 
-   // create in bul
-     @PostMapping("/insert_emp")
-     @PreAuthorize("hasRole('ADMIN')")
-     public ResponseEntity<List<EmployeeModel>> createEmployees(@RequestBody List<EmployeeRequestDTO> employeeDTOs) {
-         List<EmployeeModel> savedEmployees = employeeService.createEmployeesInBulk(employeeDTOs);
-         return ResponseEntity.ok(savedEmployees);
-     }
+    // create in bul
+    @PostMapping("/insert_emp")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<EmployeeModel>> createEmployees(@RequestBody List<EmployeeRequestDTO> employeeDTOs) {
+        List<EmployeeModel> savedEmployees = employeeService.createEmployeesInBulk(employeeDTOs);
+        return ResponseEntity.ok(savedEmployees);
+    }
 
 
     // to create employees
@@ -224,27 +226,27 @@ public class AdminController {
     @PostMapping("/InsertDepartments")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> InsertMultipleDepartments(@RequestBody List<DepartmentModel> department){
-         try {
-             deparmentService.addDepartmentList(department);
-             return ResponseEntity.ok("Inserted this Departments: "+department);
-         } catch (RuntimeException e) {
-             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e);
-         }
-     }
-  //create department
-   @PostMapping("/create_department")
-   @PreAuthorize("hasRole('ADMIN')")
-   public ResponseEntity<?> CreateDepartments(@RequestBody  DepartmentDTO department){
         try {
-          deparmentService.createDepartment(department);
+            deparmentService.addDepartmentList(department);
+            return ResponseEntity.ok("Inserted this Departments: "+department);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e);
+        }
+    }
+    //create department
+    @PostMapping("/create_department")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> CreateDepartments(@RequestBody  DepartmentDTO department){
+        try {
+            deparmentService.createDepartment(department);
             return ResponseEntity.status(HttpStatus.CREATED).body("Department created successfully");
         } catch (Exception e) {
             return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cant create new Department"+e);
         }
 
-   }
+    }
 
-   // get all Department
+    // get all Department
     @GetMapping("/get_departments_admin")
     @PreAuthorize("hasRole('ADMIN')")
 
@@ -264,43 +266,43 @@ public class AdminController {
     @PostMapping("/create_wards")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> CreateWards(@RequestBody WardsDTO dto){
-          try {
-              wardsService.createWards(dto);
-              return ResponseEntity.ok("Wards have been created");
-          } catch (Exception e) {
-              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("couldn't create the wards ERROR:"+e);
-          }
+        try {
+            wardsService.createWards(dto);
+            return ResponseEntity.ok("Wards have been created");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("couldn't create the wards ERROR:"+e);
+        }
     }
 
     //get all wards
 
-     @GetMapping("/get_wards")
-     @PreAuthorize("hasRole('ADMIN') ")
+    @GetMapping("/get_wards")
+    @PreAuthorize("hasRole('ADMIN') ")
 
-     public ResponseEntity<?> GetAllWards(){
+    public ResponseEntity<?> GetAllWards(){
         try {
             List<WardsModel> allWards = wardsService.GetAllWards();
             return ResponseEntity.ok(
-                        allWards
+                    allWards
             );
 
         } catch (Exception e) {
             return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body("couldn't fetch the wards ERROR : "+e);
         }
-     }
+    }
 
 
 
-     // add wards as a list (Only for postman)..../.
-     @PostMapping("/wards")
-     public ResponseEntity<String> addAllWards(@RequestBody List<WardsModel> wardsList) {
-         wardsService.addAllWards(wardsList);
-         return ResponseEntity.ok("Wards added successfully");
-     }
+    // add wards as a list (Only for postman)..../.
+    @PostMapping("/wards")
+    public ResponseEntity<String> addAllWards(@RequestBody List<WardsModel> wardsList) {
+        wardsService.addAllWards(wardsList);
+        return ResponseEntity.ok("Wards added successfully");
+    }
 
 
 
-     // to store all the employee at once
+    // to store all the employee at once
 //     @PostMapping("/create_all_employee")
 //     public  ResponseEntity<?> createAllAtonce( @RequestBody List<EmployeeModel> employeeModel){
 //
@@ -318,16 +320,19 @@ public class AdminController {
     /// ==================     AlertSection       =================
 
 
- // create alert
+    // create alert
     @PostMapping(value = "/create_alert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> createAlert(
             @RequestParam String title,
             @RequestParam String description,
+            @RequestParam String type,
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
         AlertRequestDto dto= new AlertRequestDto();
         dto.setTitle(title);
         dto.setDescription(description);
+        dto.setType(type);
         String response = alertsService.saveAlert(dto, image);
         return ResponseEntity.ok(response);
     }
@@ -335,11 +340,12 @@ public class AdminController {
 
     // Get all alerts
     @GetMapping("/get_all_alerts")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllAlerts() {
         try {
             List<AlertResponseDTO> alerts = alertsService.getAlerts();
             if (alerts.isEmpty()) {
-                return ResponseEntity.ok("No alerts found");
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
             } else {
                 return ResponseEntity.ok(alerts);
             }
@@ -373,6 +379,7 @@ public class AdminController {
 
     // Delete alert
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteAlert(@PathVariable Long id) {
         try {
             AlertsModel alert = alertsService.getAlertById(id);
@@ -398,6 +405,87 @@ public class AdminController {
         }
     }
 
+
+        // ---------------------- CATEGORY APIs ----------------------
+
+    @PostMapping(value = "/create_category", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createCategory(
+            @RequestParam String  name,
+            @RequestPart(value = "image", required = false) MultipartFile image
+    ) {
+       CategoryRequest request = new CategoryRequest();
+          request.setName(name);
+        String response = categoryService.createCategory(request, image);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("created"+response);
+    }
+  /*  @PostMapping(value = "/create_alert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> createAlert(
+            @RequestParam String title,
+            @RequestParam String description,
+            @RequestParam String type,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+
+        AlertRequestDto dto= new AlertRequestDto();
+        dto.setTitle(title);
+        dto.setDescription(description);
+        dto.setType(type);
+        String response = alertsService.saveAlert(dto, image);
+        return ResponseEntity.ok(response);
+    }*/
+
+    // Get All Categories
+        @GetMapping("/get/categories")
+        public ResponseEntity<List<CategoryResponse>> getAllCategories() {
+            return ResponseEntity.ok(categoryService.getAllCategories());
+        }
+
+        // Update Category
+        @PutMapping("/categories/{id}")
+        public ResponseEntity<CategoryResponse> updateCategory(
+                @PathVariable Long id,
+                @RequestPart("data") CategoryRequest request,
+                @RequestPart(value = "image", required = false) MultipartFile image) throws IOException {
+            return ResponseEntity.ok(categoryService.updateCategory(id, request, image));
+        }
+
+        // Delete Category
+        @DeleteMapping("/categories/{id}")
+        public ResponseEntity<String> deleteCategory(@PathVariable Long id) {
+            categoryService.deleteCategory(id);
+            return ResponseEntity.ok("Category deleted successfully");
+        }
+
+    // ---------------------- LOCATION APIs ----------------------
+
+    // Create Location
+        @PostMapping("/create_locations")
+    public ResponseEntity<LocationResponse> createLocation(@RequestBody LocationRequest request) {
+        return ResponseEntity.ok(locationService.createLocation(request));
+    }
+
+    // Get All Locations
+    @GetMapping("/locations")
+    public ResponseEntity<List<LocationResponse>> getAllLocations() {
+        return ResponseEntity.ok(locationService.getAllLocations());
+    }
+
+    // Update Location
+    @PutMapping("/locations/{id}")
+    public ResponseEntity<LocationResponse> updateLocation(
+            @PathVariable Long id,
+            @RequestBody LocationRequest request) {
+        return ResponseEntity.ok(locationService.updateLocation(id, request));
+    }
+
+    // Delete Location
+    @DeleteMapping("/locations/{id}")
+    public ResponseEntity<String> deleteLocation(@PathVariable Long id) {
+        locationService.deleteLocation(id);
+        return ResponseEntity.ok("Location deleted successfully");
+    }
 
 
 }
