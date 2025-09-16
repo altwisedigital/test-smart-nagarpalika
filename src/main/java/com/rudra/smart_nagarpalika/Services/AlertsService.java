@@ -24,7 +24,7 @@ public class AlertsService {
 
   // creating alerts using
   // Fixed Service Method
-  public String saveAlert(AlertRequestDto dto, MultipartFile image){
+  public AlertsModel saveAlert(AlertRequestDto dto, MultipartFile image){
        String uploadedImage = "";
 
        if ( image != null){
@@ -49,9 +49,9 @@ public class AlertsService {
 
       alerts.setImageUrl(uploadedImage);
 
-      alertRepo.save(alerts);
 
-      return  "alert created successfully"+ alerts;
+
+      return  alertRepo.save(alerts);
   }
 
 
@@ -69,6 +69,9 @@ public class AlertsService {
                 .toList();
     }
 
+    public List<AlertsModel> getALlALerts(){
+      return alertRepo.findAll();
+    }
     //Delete alerts by id
     public Boolean DeleteAlert(Long id){
         if (id == null){

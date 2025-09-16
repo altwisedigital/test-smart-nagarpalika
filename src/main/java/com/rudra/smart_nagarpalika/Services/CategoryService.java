@@ -59,7 +59,8 @@ public class CategoryService {
           return CategoryResponse.builder()
                   .id(category.getId())
                   .name(category.getName())
-                  .imageUrl(category.getImageUrl())
+                  .imageUrl("http://" + IpServices.getCurrentIP() + ":8080"
+                          + "/uploads/Category_Logo_Uploads/"+category.getImageUrl())
                   .locations(category.getLocations()
                           .stream()
                           .map(Location::getName)

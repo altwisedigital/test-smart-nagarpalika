@@ -1,6 +1,7 @@
 package com.rudra.smart_nagarpalika.Controller;
 
 import com.rudra.smart_nagarpalika.DTO.*;
+import com.rudra.smart_nagarpalika.Handler.AlertWebSocketHandler;
 import com.rudra.smart_nagarpalika.Model.*;
 
 import com.rudra.smart_nagarpalika.Repository.AlertRepo;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,12 +33,14 @@ public class AdminController {
 
     private final ComplaintService complaintService;
     private final DeparmentService deparmentService;
-
+    private final AlertWebSocketHandler webSocketHandler;
     private final WardsService wardsService;
     private final UserServices userServices;
     private final AlertsService alertsService;
     private final CategoryService categoryService;
     private final LocationService locationService;
+
+//    private final SimpMessagingTemplate simpMessagingTemplate;
 
 
     /// =======================     Citizen Section     ==============================
@@ -52,6 +56,28 @@ public class AdminController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    // update the user using its id
+
+    @PutMapping("/update_users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateUser(
+            @PathVariable Long id,
+            @RequestBody UserModel user) {
+        try {
+            UserResponseDTO updated = userServices.updateUser(id, user);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException ex) {
+            // Handles user not found or username conflict
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", ex.getMessage()));
+        } catch (Exception ex) {
+            // Handles unexpected errors
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred", "details", ex.getMessage()));
+        }
+    }
+
 
 
     /// =======================     employee Section     ==============================
@@ -300,110 +326,64 @@ public class AdminController {
         return ResponseEntity.ok("Wards added successfully");
     }
 
+/// ====================== Alert API'S ================================================
+@PostMapping(value = "/create_alert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+@PreAuthorize("hasRole('ADMIN')")
+public ResponseEntity<?> createAlert(
+        @RequestParam String title,
+        @RequestParam String description,
+        @RequestParam String type,
+        @RequestPart(value = "image", required = false) MultipartFile image) {
 
-
-    // to store all the employee at once
-//     @PostMapping("/create_all_employee")
-//     public  ResponseEntity<?> createAllAtonce( @RequestBody List<EmployeeModel> employeeModel){
-//
-//         try {
-//             employeeService.addAllEmployee(employeeModel);
-//             return ResponseEntity.ok("employees saved Successfully ");
-//         } catch (Exception e) {
-//             return  new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-//         }
-//
-//
-//     }
-
-
-    /// ==================     AlertSection       =================
-
-
-    // create alert
-    @PostMapping(value = "/create_alert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> createAlert(
-            @RequestParam String title,
-            @RequestParam String description,
-            @RequestParam String type,
-            @RequestPart(value = "image", required = false) MultipartFile image) {
-
-        AlertRequestDto dto= new AlertRequestDto();
+    try {
+        // Create DTO
+        AlertRequestDto dto = new AlertRequestDto();
         dto.setTitle(title);
         dto.setDescription(description);
         dto.setType(type);
-        String response = alertsService.saveAlert(dto, image);
-        return ResponseEntity.ok(response);
+
+        // Save alert and get the saved object
+        AlertsModel savedAlert = alertsService.saveAlert(dto, image);
+
+        // Broadcast to WebSocket clients
+        webSocketHandler.broadcastNewAlert(savedAlert);
+
+        log.info("Alert created and broadcasted: {} (ID: {})", savedAlert.getTitle(), savedAlert.getId());
+
+        // Return success response with alert data
+        return ResponseEntity.ok(Map.of(
+                "message", "Alert created and broadcasted successfully",
+                "alert", savedAlert,
+                "activeConnections", webSocketHandler.getActiveSessionCount()
+        ));
+
+    } catch (Exception e) {
+        log.error("Failed to create alert: {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to create alert: " + e.getMessage()));
     }
+}
 
-
-    // Get all alerts
     @GetMapping("/get_all_alerts")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getAllAlerts() {
+    public ResponseEntity<List<AlertResponseDTO>> getAllAlerts() {
         try {
             List<AlertResponseDTO> alerts = alertsService.getAlerts();
-            if (alerts.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
-            } else {
-                return ResponseEntity.ok(alerts);
-            }
+            return ResponseEntity.ok(alerts);
         } catch (Exception e) {
-            System.err.println("Error fetching alerts: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Unable to load alerts. Please try again later.");
+            log.error("Failed to fetch alerts: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-//    // Get alert by ID
-//    @GetMapping("delete_alert/{id}")
-//    public ResponseEntity<?> getAlertById(@PathVariable Long id) {
-//        try {
-//            AlertsModel alert = alertsService.getAlertById(id);
-//            if (alert != null) {
-//                return ResponseEntity.ok(alert);
-//            } else {
-//                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//                        .body("Alert not found with ID: " + id);
-//            }
-//        } catch (IllegalArgumentException e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-//                    .body("Invalid request: " + e.getMessage());
-//        } catch (Exception e) {
-//            System.err.println("Error fetching alert: " + e.getMessage());
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body("Error occurred while fetching alert. Please try again later.");
-//        }
-//    }
-
-    // Delete alert
-    @DeleteMapping("/{id}")
+    @GetMapping("/ws/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> deleteAlert(@PathVariable Long id) {
-        try {
-            AlertsModel alert = alertsService.getAlertById(id);
-            if (alert != null) {
-                boolean isDeleted = alertsService.DeleteAlert(id);
-                if (isDeleted) {
-                    return ResponseEntity.ok("Alert with ID " + id +"\n"+ alert+ " has been deleted successfully");
-                } else {
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Failed to delete alert with ID: " + id);
-                }
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Alert not found with ID: " + id);
-            }
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Invalid request: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Error deleting alert: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error occurred while deleting alert. Please try again later.");
-        }
+    public ResponseEntity<?> getWebSocketStatus() {
+        return ResponseEntity.ok(Map.of(
+                "activeConnections", webSocketHandler.getActiveSessionCount(),
+                "status", "WebSocket server running"
+        ));
     }
+
 
 
         // ---------------------- CATEGORY APIs ----------------------

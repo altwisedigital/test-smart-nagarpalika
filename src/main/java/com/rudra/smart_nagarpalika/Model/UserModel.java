@@ -30,6 +30,8 @@ public class UserModel implements UserDetails {
 
     private String fullName;
     private String phoneNumber;
+    private String email;
+    private String address;
 
     @Enumerated(EnumType.STRING)
     private UserRole role;
@@ -37,7 +39,11 @@ public class UserModel implements UserDetails {
     @OneToOne(mappedBy = "userAccount", cascade = CascadeType.ALL)
     private EmployeeModel employee;
 
+    // Time when user is created
     private LocalDateTime createdAt;
+
+    // time  when user is updated
+    private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<ComplaintModel> complaints = new ArrayList<>();

@@ -1,6 +1,7 @@
 package com.rudra.smart_nagarpalika.Services;
 
 import com.rudra.smart_nagarpalika.DTO.EmployeeDetailsDTO;
+import com.rudra.smart_nagarpalika.DTO.UserRegistrationDTO;
 import com.rudra.smart_nagarpalika.DTO.UserResponseDTO;
 import com.rudra.smart_nagarpalika.Model.UserModel;
 import com.rudra.smart_nagarpalika.Model.UserRole;
@@ -32,6 +33,34 @@ public class UserServices {
                 .map(UserResponseDTO::new)
                 .collect(Collectors.toList());
     }
+
+
+    // update user using id
+    public UserResponseDTO updateUser(Long id, UserModel updatedUser) {
+        UserModel existingUser = userRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+
+
+        if (!existingUser.getUsername().equals(updatedUser.getUsername()) &&
+                userRepo.findByUsername(updatedUser.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+
+
+        existingUser.setFullName(updatedUser.getFullName());
+        existingUser.setEmail(updatedUser.getEmail());
+        existingUser.setAddress(updatedUser.getAddress());
+        existingUser.setUpdatedAt(LocalDateTime.now());
+
+
+        UserModel savedUser = userRepo.save(existingUser);
+
+
+        return new UserResponseDTO(savedUser);
+    }
+
+
+
 
     public String saveUser(UserModel user) {
         // Validation

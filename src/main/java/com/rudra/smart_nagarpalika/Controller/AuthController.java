@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @RequestMapping("/auth")
@@ -100,6 +101,8 @@ public class AuthController {
             user.setPassword(registrationDTO.getPassword());
             user.setFullName(registrationDTO.getFullName());
             user.setPhoneNumber(registrationDTO.getPhoneNumber());
+            user.setEmail(registrationDTO.getEmail());
+            user.setCreatedAt(LocalDateTime.now());
 
             // Use a provided role or default to CITIZEN
             UserRole role = registrationDTO.getRole() != null ? registrationDTO.getRole() : UserRole.USER;

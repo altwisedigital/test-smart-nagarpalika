@@ -9,5 +9,7 @@ public class UserRegistrationDTO {
     private String password;
     private String fullName;
     private String phoneNumber;
+    private String email;
+    private String address;
     private UserRole role; // Optional - will default to CITIZEN
 }

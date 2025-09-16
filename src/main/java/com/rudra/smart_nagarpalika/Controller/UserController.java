@@ -1,8 +1,6 @@
 package com.rudra.smart_nagarpalika.Controller;
 
-import com.rudra.smart_nagarpalika.DTO.AlertResponseDTO;
-import com.rudra.smart_nagarpalika.DTO.ComplaintResponseDTO;
-import com.rudra.smart_nagarpalika.DTO.UserRegistrationDTO;
+import com.rudra.smart_nagarpalika.DTO.*;
 import com.rudra.smart_nagarpalika.Model.*;
 import com.rudra.smart_nagarpalika.Services.*;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +13,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.rmi.server.LogStream.log;
+
 @RestController
 @RequestMapping("/citizen")
 @RequiredArgsConstructor
@@ -24,7 +24,8 @@ public class UserController {
     private final DeparmentService deparmentService;
      private final WardsService wardsService;
      private final AlertsService alertsService;
-
+    private  final  LocationService locationService;
+    private final CategoryService categoryService;
     @GetMapping("/complaints/by-username")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> getComplaintsByUsername(@RequestParam String username) {
@@ -124,19 +125,36 @@ public class UserController {
 
     @GetMapping("/get_all_alerts")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getAllAlerts() {
+    public ResponseEntity<List<AlertResponseDTO>> getAllAlerts() {
         try {
             List<AlertResponseDTO> alerts = alertsService.getAlerts();
+
             if (alerts.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
             } else {
                 return ResponseEntity.ok(alerts);
             }
         } catch (Exception e) {
-            System.err.println("Error fetching alerts: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Unable to load alerts. Please try again later.");
+            log("Error fetching alerts: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+
+    /// ================================= locations apis's ==========================================
+
+    @GetMapping("/locations")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<LocationResponse>> getAllLocations() {
+        return ResponseEntity.ok(locationService.getAllLocations());
+    }
+
+    /// =============================== categories api's ========================================
+
+    @GetMapping("/categories")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
+        return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
 }
