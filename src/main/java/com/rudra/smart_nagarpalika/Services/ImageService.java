@@ -1,18 +1,27 @@
 package com.rudra.smart_nagarpalika.Services;
 
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.*;
 import java.util.Objects;
 import java.util.UUID;
 
 @Service
 @Slf4j
 public class ImageService {
+
+    @Value("${supabase.url}")
+    private String supabaseUrl;
+
+    @Value("${supabase.key}")
+    private String supabaseKey;
+
+    @Value("${supabase.bucket.name}")
+    private String bucketName;
 
     @Value("${upload.citizen.dir}")
     private String citizenUploadDir;
@@ -26,37 +35,85 @@ public class ImageService {
     @Value("${upload.category.dir}")
     private String categoryLogoDir;
 
-    private String saveFile(MultipartFile imageFile, String baseDir) throws IOException {
+    private final OkHttpClient httpClient = new OkHttpClient();
+
+    private String uploadFileToSupabase(MultipartFile imageFile, String folder) throws IOException {
         if (imageFile.isEmpty()) {
             throw new IOException("Image file is empty.");
         }
 
+        // Generate clean filename
         String cleanName = Objects.requireNonNull(imageFile.getOriginalFilename())
                 .replaceAll("\\s+", "_");
-        String filename = UUID.randomUUID() + "_" + cleanName;
+        String filename = folder + "/" + UUID.randomUUID() + "_" + cleanName;
 
-        Path path = Paths.get(baseDir, filename);
-        Files.createDirectories(path.getParent());
-        Files.copy(imageFile.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
+        // Create request body
+        RequestBody requestBody = RequestBody.create(
+                imageFile.getBytes(),
+                MediaType.parse(imageFile.getContentType())
+        );
 
-        log.info("Image saved at: {}", path.toAbsolutePath());
+        // Build the request
+        Request request = new Request.Builder()
+                .url(supabaseUrl + "/storage/v1/object/" + bucketName + "/" + filename)
+                .post(requestBody)
+                .addHeader("Authorization", "Bearer " + supabaseKey)
+                .addHeader("Content-Type", imageFile.getContentType())
+                .build();
 
-        return filename; // or return path.toString() if you prefer
+        // Execute request
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                String errorBody = response.body() != null ? response.body().string() : "Unknown error";
+                log.error("Failed to upload file to Supabase. Response: {} - {}", response.code(), errorBody);
+                throw new IOException("Failed to upload file: " + response.code() + " - " + errorBody);
+            }
+
+            // Return the public URL
+            String publicUrl = supabaseUrl + "/storage/v1/object/public/" + bucketName + "/" + filename;
+            log.info("File uploaded successfully: {}", publicUrl);
+            return publicUrl;
+        }
     }
 
     public String saveCitizenImage(MultipartFile imageFile) throws IOException {
-        return saveFile(imageFile, citizenUploadDir);
+        return uploadFileToSupabase(imageFile, citizenUploadDir);
     }
 
     public String saveEmployeeImage(MultipartFile imageFile) throws IOException {
-        return saveFile(imageFile, employeeUploadDir);
+        return uploadFileToSupabase(imageFile, employeeUploadDir);
     }
 
     public String saveAlertImage(MultipartFile imageFile) throws IOException {
-        return saveFile(imageFile, alertUploadDir);
+        return uploadFileToSupabase(imageFile, alertUploadDir);
     }
 
     public String saveCategoryLogo(MultipartFile imageFile) throws IOException {
-        return saveFile(imageFile, categoryLogoDir);
+        return uploadFileToSupabase(imageFile, categoryLogoDir);
+    }
+
+    // Optional: Method to delete files
+    public boolean deleteFile(String fileUrl) {
+        try {
+            // Extract the path after "/public/"
+            String publicPath = "/storage/v1/object/public/" + bucketName + "/";
+            if (fileUrl.contains(publicPath)) {
+                String filePath = fileUrl.substring(fileUrl.indexOf(publicPath) + publicPath.length());
+
+                Request request = new Request.Builder()
+                        .url(supabaseUrl + "/storage/v1/object/" + bucketName + "/" + filePath)
+                        .delete()
+                        .addHeader("Authorization", "Bearer " + supabaseKey)
+                        .build();
+
+                try (Response response = httpClient.newCall(request).execute()) {
+                    return response.isSuccessful();
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("Failed to delete file: {}", fileUrl, e);
+            return false;
+        }
     }
 }
