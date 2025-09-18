@@ -54,6 +54,7 @@ public class EmployeeController {
 
 
     @GetMapping("assignedComplaints/{name}")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<?> fetchAssignedComplaint(@PathVariable String name) {
         try {
             List<ComplaintResponseDTO> assignedComplaint = employeeService.fetchAssignedComplaint(name);
