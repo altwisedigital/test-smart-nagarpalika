@@ -53,12 +53,11 @@ public class ImageService {
                 MediaType.parse(imageFile.getContentType())
         );
 
-        // Build the request
+        // Build the request (✅ use PUT instead of POST)
         Request request = new Request.Builder()
                 .url(supabaseUrl + "/storage/v1/object/" + bucketName + "/" + filename)
-                .post(requestBody)
+                .put(requestBody)
                 .addHeader("Authorization", "Bearer " + supabaseKey)
-                .addHeader("Content-Type", imageFile.getContentType())
                 .build();
 
         // Execute request
@@ -69,7 +68,7 @@ public class ImageService {
                 throw new IOException("Failed to upload file: " + response.code() + " - " + errorBody);
             }
 
-            // Return the public URL
+            // Return the public URL (works only if bucket is public)
             String publicUrl = supabaseUrl + "/storage/v1/object/public/" + bucketName + "/" + filename;
             log.info("File uploaded successfully: {}", publicUrl);
             return publicUrl;
