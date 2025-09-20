@@ -1,6 +1,9 @@
 package com.rudra.smart_nagarpalika.DTO;
 
 import com.rudra.smart_nagarpalika.Model.ComplaintModel;
+import com.rudra.smart_nagarpalika.Model.ImageByEmployeeModel;
+import com.rudra.smart_nagarpalika.Model.ImageByUserModel;
+import com.rudra.smart_nagarpalika.Model.VideoByUserModel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -39,11 +42,11 @@ public class ComplaintResponseDTO {
         this.location = complaint.getLocation();
 
         this.imageUrls = complaint.getImages() != null
-                ? complaint.getImages().stream().map(img -> img.getImageUrl()).toList()
+                ? complaint.getImages().stream().map(ImageByUserModel::getImageUrl).toList()
                 : List.of();
 
         this.videoUrls = complaint.getVideo() != null
-                ? complaint.getVideo().stream().map(video -> video.getVideoUrl()).toList()
+                ? complaint.getVideo().stream().map(VideoByUserModel::getVideoUrl).toList()
                 : List.of();
 
         this.submittedBy = complaint.getSubmittedBy();
@@ -59,7 +62,7 @@ public class ComplaintResponseDTO {
         this.employeeRemark = complaint.getEmployeeRemarks();
 
         this.employeeImages = complaint.getEmployeeImages() != null
-                ? complaint.getEmployeeImages().stream().map(img -> img.getImageUrl()).toList()
+                ? complaint.getEmployeeImages().stream().map(ImageByEmployeeModel::getImageUrl).toList()
                 : List.of();
 
         this.completedAt = complaint.getCompletedAt();

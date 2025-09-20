@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.*;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -21,7 +22,7 @@ public class ImageService {
     private String supabaseKey;
 
     @Value("${supabase.bucket.name}")
-    private String bucketName;
+    private String bucket;
 
     @Value("${upload.citizen.dir}")
     private String citizenUploadDir;
@@ -35,85 +36,73 @@ public class ImageService {
     @Value("${upload.category.dir}")
     private String categoryLogoDir;
 
-    private final OkHttpClient httpClient = new OkHttpClient();
+    private final OkHttpClient client = new OkHttpClient();
 
-    private String uploadFileToSupabase(MultipartFile imageFile, String folder) throws IOException {
+    private String saveFile(MultipartFile imageFile, String folder) throws IOException {
         if (imageFile.isEmpty()) {
+            log.error("Image file is empty: {}", imageFile.getOriginalFilename());
             throw new IOException("Image file is empty.");
         }
 
-        // Generate clean filename
+        // Generate clean unique filename
         String cleanName = Objects.requireNonNull(imageFile.getOriginalFilename())
-                .replaceAll("\\s+", "_");
-        String filename = folder + "/" + UUID.randomUUID() + "_" + cleanName;
+                .replaceAll("[^a-zA-Z0-9.-]", "_");
+        String filename = UUID.randomUUID() + "_" + cleanName;
+        String path = folder + "/" + filename;
+        String uploadUrl = supabaseUrl + "/storage/v1/object/" + bucket + "/" + path;
 
-        // Create request body
-        RequestBody requestBody = RequestBody.create(
-                imageFile.getBytes(),
-                MediaType.parse(imageFile.getContentType())
-        );
+        log.info("Uploading to Supabase: {}", uploadUrl);
 
-        // Build the request
+        // Set Content-Type, fallback if null
+        String contentType = imageFile.getContentType();
+        if (contentType == null) {
+            contentType = "application/octet-stream";
+            log.warn("Null Content-Type for {}; using fallback", imageFile.getOriginalFilename());
+        }
+
+        // Prepare request body
+        RequestBody requestBody = RequestBody.create(imageFile.getBytes(), MediaType.parse(contentType));
+
+        // Build request
         Request request = new Request.Builder()
-                .url(supabaseUrl + "/storage/v1/object/" + bucketName + "/" + filename)
-                .post(requestBody)
+                .url(uploadUrl)
                 .addHeader("Authorization", "Bearer " + supabaseKey)
-                .addHeader("Content-Type", imageFile.getContentType())
+                .addHeader("x-upsert", "true") // Overwrite if exists
+                .post(requestBody)
                 .build();
 
-        // Execute request
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                String errorBody = response.body() != null ? response.body().string() : "Unknown error";
-                log.error("Failed to upload file to Supabase. Response: {} - {}", response.code(), errorBody);
-                throw new IOException("Failed to upload file: " + response.code() + " - " + errorBody);
-            }
+        // Execute upload
+        try (Response response = client.newCall(request).execute()) {
+            String responseBody = response.body() != null ? response.body().string() : "No response body";
+            log.info("Supabase response for {}: Code={}, Body={}", path, response.code(), responseBody);
 
-            // Return the public URL
-            String publicUrl = supabaseUrl + "/storage/v1/object/public/" + bucketName + "/" + filename;
-            log.info("File uploaded successfully: {}", publicUrl);
-            return publicUrl;
+            if (response.isSuccessful()) {
+                String publicUrl = supabaseUrl + "/storage/v1/object/public/" + bucket + "/" + path;
+                log.info("Image uploaded successfully to {}: {}", path, publicUrl);
+                return publicUrl;
+            } else {
+                log.error("Upload failed for {}: {} - {}", path, response.code(), responseBody);
+                throw new IOException("Upload failed: " + response.code() + " - " + responseBody);
+            }
+        } catch (IOException e) {
+            log.error("Error uploading to {}: {}", path, e.getMessage());
+            throw new IOException("Failed to upload image: " + e.getMessage(), e);
         }
     }
 
     public String saveCitizenImage(MultipartFile imageFile) throws IOException {
-        return uploadFileToSupabase(imageFile, citizenUploadDir);
+        return saveFile(imageFile, citizenUploadDir);
     }
 
     public String saveEmployeeImage(MultipartFile imageFile) throws IOException {
-        return uploadFileToSupabase(imageFile, employeeUploadDir);
+        return saveFile(imageFile, employeeUploadDir);
     }
 
     public String saveAlertImage(MultipartFile imageFile) throws IOException {
-        return uploadFileToSupabase(imageFile, alertUploadDir);
+        return saveFile(imageFile, alertUploadDir);
     }
 
     public String saveCategoryLogo(MultipartFile imageFile) throws IOException {
-        return uploadFileToSupabase(imageFile, categoryLogoDir);
-    }
-
-    // Optional: Method to delete files
-    public boolean deleteFile(String fileUrl) {
-        try {
-            // Extract the path after "/public/"
-            String publicPath = "/storage/v1/object/public/" + bucketName + "/";
-            if (fileUrl.contains(publicPath)) {
-                String filePath = fileUrl.substring(fileUrl.indexOf(publicPath) + publicPath.length());
-
-                Request request = new Request.Builder()
-                        .url(supabaseUrl + "/storage/v1/object/" + bucketName + "/" + filePath)
-                        .delete()
-                        .addHeader("Authorization", "Bearer " + supabaseKey)
-                        .build();
-
-                try (Response response = httpClient.newCall(request).execute()) {
-                    return response.isSuccessful();
-                }
-            }
-            return false;
-        } catch (Exception e) {
-            log.error("Failed to delete file: {}", fileUrl, e);
-            return false;
-        }
+        return saveFile(imageFile, categoryLogoDir);
     }
 }

@@ -49,18 +49,14 @@ public class UserController {
                         // citizen images
                         complaint.getImages() != null
                                 ? complaint.getImages().stream()
-                                .map(img -> "http://" + IpServices.getCurrentIP()
-                                        + ":8080/uploads/citizen_image_uploads/"
-                                        + img.getImageUrl())
+                                .map(img ->  img.getImageUrl())
                                 .toList()
                                 : List.of(),
 
                         // citizen videos
                         complaint.getVideo() != null
                                 ? complaint.getVideo().stream()
-                                .map(video -> "http://" + IpServices.getCurrentIP()
-                                        + ":8080/uploads/citizen_video_uploads/"
-                                        + video.getVideoUrl())
+                                .map(video ->  video.getVideoUrl())
                                 .toList()
                                 : List.of(),
 
@@ -77,9 +73,7 @@ public class UserController {
                         // employee images
                         complaint.getEmployeeImages() != null
                                 ? complaint.getEmployeeImages().stream()
-                                .map(img -> "http://" + IpServices.getCurrentIP()
-                                        + ":8080/uploads/employee_image_uploads/"
-                                        + img.getImageUrl())
+                                .map(img -> img.getImageUrl())
                                 .toList()
                                 : List.of(),
 
